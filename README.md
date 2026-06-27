@@ -2,7 +2,7 @@
 
 Speed comparison of PHP parsers, run automatically in CI.
 
-Each parser walks the same corpus (the `nikic/php-parser` `vendor/` directory) and parses every `.php` file. Each tool runs **10 times** and the **average** wall-clock time is reported.
+Each parser walks the same corpus — the `src/` directory of the [Laravel framework](https://github.com/laravel/framework) (cloned fresh in CI) — and parses every `.php` file. Each tool runs **5 times** and the **average** wall-clock time is reported.
 
 ## Parsers
 
@@ -11,32 +11,42 @@ Each parser walks the same corpus (the `nikic/php-parser` `vendor/` directory) a
 | `nikic-PHP-Parser` | [nikic/php-parser](https://github.com/nikic/PHP-Parser) v5 | PHP |
 | `ext-ast` | [php-ast](https://github.com/nikic/php-ast) extension | PHP (C ext) |
 | `z7zmey-php-parser-dev` | [z7zmey/php-parser](https://github.com/z7zmey/php-parser) | Go |
+| `halleck45-go-php-parser` | [halleck45/go-php-parser](https://github.com/Halleck45/go-php-parser) | Go + embedded PHP (cgo) |
 
 ## Latest results
 
 ```
-Rank | Parser                | Avg (10 runs)
-   1 | ext-ast               |        205 ms
-   2 | z7zmey/php-parser     |        267 ms
-   3 | nikic/php-parser (v5) |       2237 ms
+Rank | Parser                  | Avg (5 runs)
+   1 | ext-ast                 |        210 ms
+   2 | z7zmey/php-parser       |        254 ms
+   3 | halleck45/go-php-parser |        256 ms
+   4 | nikic/php-parser (v5)   |       1727 ms
 ```
 
 > Timings come from shared GitHub-hosted runners — good for rough ranking, not precise benchmarking. Live numbers appear in every run's **Summary** page.
 
 ## Run locally
 
-Each subproject has a `make run` target that wraps the parse in `time`:
+First get the corpus (once, at the repo root):
+
+```bash
+git clone --depth 1 https://github.com/laravel/framework laravel
+```
+
+Then run each subproject's `make run` target (wraps the parse in `time`):
 
 ```bash
 # PHP parsers (need PHP 8.4; ext-ast also needs the `ast` extension)
-composer install --working-dir=nikic-PHP-Parser   # provides the corpus
+composer install --working-dir=nikic-PHP-Parser
 make -C nikic-PHP-Parser run
 make -C ext-ast run
 
-# Go parser
+# z7zmey (Go)
 go build -o z7zmey-php-parser-dev/z7zmey-php-parser-dev ./z7zmey-php-parser-dev
 make -C z7zmey-php-parser-dev run
 ```
+
+`halleck45-go-php-parser` is a cgo wrapper around an embedded PHP and needs extra setup (musl toolchain + prebuilt native libs). See the `halleck45-go-php-parser` job in the workflow and [CLAUDE.md](CLAUDE.md) for the exact build steps.
 
 ## CI
 

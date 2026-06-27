@@ -29,14 +29,14 @@ jobs:
               working-directory: nikic-PHP-Parser
               run: |
                   total=0
-                  for i in $(seq 1 10); do
+                  for i in $(seq 1 5); do
                     start=$(date +%s%3N)
                     make run > /dev/null
                     end=$(date +%s%3N)
                     total=$((total + end - start))
                     echo "run $i: $((end - start)) ms"
                   done
-                  echo "nikic/php-parser (v5)|$((total / 10))" > ../nikic-php-parser.txt
+                  echo "nikic/php-parser (v5)|$((total / 5))" > ../nikic-php-parser.txt
 
             - uses: actions/upload-artifact@v4
               with:
@@ -61,14 +61,14 @@ jobs:
               working-directory: ext-ast
               run: |
                   total=0
-                  for i in $(seq 1 10); do
+                  for i in $(seq 1 5); do
                     start=$(date +%s%3N)
                     make run > /dev/null
                     end=$(date +%s%3N)
                     total=$((total + end - start))
                     echo "run $i: $((end - start)) ms"
                   done
-                  echo "ext-ast|$((total / 10))" > ../ext-ast.txt
+                  echo "ext-ast|$((total / 5))" > ../ext-ast.txt
 
             - uses: actions/upload-artifact@v4
               with:
@@ -94,14 +94,14 @@ jobs:
               working-directory: z7zmey-php-parser-dev
               run: |
                   total=0
-                  for i in $(seq 1 10); do
+                  for i in $(seq 1 5); do
                     start=$(date +%s%3N)
                     make run > /dev/null
                     end=$(date +%s%3N)
                     total=$((total + end - start))
                     echo "run $i: $((end - start)) ms"
                   done
-                  echo "z7zmey/php-parser|$((total / 10))" > ../z7zmey-php-parser-dev.txt
+                  echo "z7zmey/php-parser|$((total / 5))" > ../z7zmey-php-parser-dev.txt
 
             - uses: actions/upload-artifact@v4
               with:
@@ -149,14 +149,14 @@ jobs:
                   # warm-up: fetch runtime libs into v1/prebuilt (cached for later runs)
                   ./halleck45-go-php-parser ../laravel/src > /dev/null
                   total=0
-                  for i in $(seq 1 10); do
+                  for i in $(seq 1 5); do
                     start=$(date +%s%3N)
                     make run > /dev/null
                     end=$(date +%s%3N)
                     total=$((total + end - start))
                     echo "run $i: $((end - start)) ms"
                   done
-                  echo "halleck45/go-php-parser|$((total / 10))" > ../halleck45-go-php-parser.txt
+                  echo "halleck45/go-php-parser|$((total / 5))" > ../halleck45-go-php-parser.txt
 
             - uses: actions/upload-artifact@v4
               with:
@@ -182,11 +182,11 @@ jobs:
                   {
                     echo "## Benchmark results"
                     echo ""
-                    echo "Average wall-clock time over 10 runs parsing the Laravel framework \`src/\` corpus. Fastest first."
+                    echo "Average wall-clock time over 5 runs parsing the Laravel framework \`src/\` corpus. Fastest first."
                     echo ""
                     echo '```'
                     {
-                      printf 'Rank|Parser|Avg (10 runs)\n'
+                      printf 'Rank|Parser|Avg (5 runs)\n'
                       rank=0
                       find durations -name '*.txt' -exec cat {} + | sort -t'|' -k2 -n | while IFS='|' read -r name ms; do
                         rank=$((rank + 1))

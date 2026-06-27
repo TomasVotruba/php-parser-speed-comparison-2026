@@ -4,31 +4,48 @@ Benchmark repo comparing PHP parser speed. Each subproject parses the same corpu
 
 ## Layout
 
-- `nikic-PHP-Parser/` — PHP, `nikic/php-parser` v5. Composer project. Also pulls `mpdf/mpdf` (only to fatten the corpus, not used by the bench).
+- `nikic-PHP-Parser/` — PHP, `nikic/php-parser` v5. Composer project. Also pulls `mpdf/mpdf` (legacy; not used by the bench).
 - `ext-ast/` — PHP, `php-ast` C extension. Composer requires `ext-ast` (platform), no real packages.
 - `z7zmey-php-parser-dev/` — Go, `z7zmey/php-parser` v0.7.2.
+- `halleck45-go-php-parser/` — Go + cgo wrapper around an embedded PHP, `halleck45/go-php-parser`.
 
 The tagged `z7zmey-php-parser/` variant was removed — only the dev one is kept.
 
 ## How a benchmark works
 
-- Corpus = the `nikic-PHP-Parser/vendor/` directory. It must exist before any bench runs, so every CI job runs `composer install --working-dir=nikic-PHP-Parser` first.
-- Each subproject's `Makefile` has a single `run` target wrapping the parse in `time`.
-- `nikic` bench parses its own cwd; `ext-ast` and the Go bench take `../nikic-PHP-Parser` as the path argument.
+- Corpus = the `src/` directory of a freshly cloned `laravel/framework` (`git clone --depth 1 ... laravel`, parsed as `../laravel/src`). It is gitignored — every CI job clones it.
+- Parse only `laravel/src`, NOT the whole repo: `laravel/tests/.../fixtures/` contains intentionally broken PHP (e.g. `bad-return-strategy.php`) that hard-crashes some parsers (halleck45 exits 255).
+- Each subproject's `Makefile` has a single `run` target wrapping the parse in `time`, pointed at `../laravel/src`.
 
 ## Gotchas
 
 - `ext-ast` cannot run without the `ast` PHP extension installed (CI uses `shivammathur/setup-php` with `extensions: ast`). Not installable on a stock box without the extension.
 - `ext-ast/bench.php` passes AST version `110` to `ast\parse_file()` — versions below 70 are invalid in php-ast 1.x.
 - `nikic/bench.php` uses `(new ParserFactory)->createForNewestSupportedVersion()` — the v4 `create(PREFER_PHP7)` API was removed in v5.
-- Go: `z7zmey/php-parser` v0.7.2 changed the API — `php7.NewParser([]byte, version)` and `GetPath()` was removed (the bench prints the file path itself). Older `bytes.Reader`-based code will not compile.
-- Built Go binaries (`z7zmey-php-parser-dev/z7zmey-php-parser-dev`) and `vendor/` are gitignored.
+- `z7zmey/php-parser` v0.7.2 changed the API — `php7.NewParser([]byte, version)` and `GetPath()` was removed (the bench prints the file path itself). Older `bytes.Reader`-based code will not compile.
+- Built Go binaries and `vendor/` are gitignored.
+
+## halleck45-go-php-parser build (the tricky one)
+
+cgo wrapper that links an embedded static PHP. The Go module ships **no** prebuilt native libs, and only a **musl** linux release exists (no glibc). Build recipe (mirrored in the CI job):
+
+1. `go.mod` has a relative `replace github.com/halleck45/go-php-parser => ./.halleck-src` — `.halleck-src` is gitignored and must be prepared first:
+   - `git clone --depth 1 https://github.com/Halleck45/go-php-parser .halleck-src`
+   - download `prebuilt-linux_amd64_musl.tar.gz` from the v0.1.0 release and `tar xzf` it into `.halleck-src/` (lands at `.halleck-src/prebuilt/linux_amd64_musl/`).
+2. Build with the musl toolchain (`apt-get install musl-tools`) and the `musl` build tag. The module's cgo flags only add `-Iinclude/php`, so extra absolute `-I` for `main`, `Zend`, `TSRM`, `sapi/embed`, `ext`, `ext/date/lib` must be passed via `CGO_CFLAGS` (absolute paths — cgo compiles in a temp dir, relative `-I` fail):
+   ```
+   INC="$(pwd)/.halleck-src/prebuilt/linux_amd64_musl/include/php"
+   CC=musl-gcc CGO_ENABLED=1 CGO_CFLAGS="-I$INC -I$INC/main -I$INC/Zend -I$INC/TSRM -I$INC/sapi/embed -I$INC/ext -I$INC/ext/date/lib" \
+     go build -tags musl -o halleck45-go-php-parser .
+   ```
+3. At first run the binary fetches runtime libs into `./v1/prebuilt/<target>` (cwd-relative, cached/skipped if present) — gitignored. The timed step does one warm-up run before the loop so the download is not counted.
+4. Resulting binary is a musl ELF — needs `/lib/ld-musl-x86_64.so.1` (from `musl-tools`) to run.
 
 ## CI
 
 `.github/workflows/benchmark.yaml`: push to `main`, pull requests, cron every 12h.
 
-- One job per parser. Each runs `make run` **10 times**, averages the wall-clock ms, and uploads it as a `duration-*` artifact (`Label|ms` format).
+- One job per parser. Each runs `make run` **5 times**, averages the wall-clock ms, and uploads it as a `duration-*` artifact (`Label|ms` format).
 - The `summary` job downloads all artifacts, collects them with `find` (not a glob — files may be nested per artifact), sorts ascending, and renders a fixed-width table (`column -t`) into `$GITHUB_STEP_SUMMARY` (also `tee`'d to the job log).
 
 ## Editing the timing table

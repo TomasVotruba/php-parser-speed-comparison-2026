@@ -22,6 +22,9 @@ jobs:
 
             - run: composer install --no-progress --working-dir=nikic-PHP-Parser
 
+            - name: Clone Laravel corpus
+              run: git clone --depth 1 https://github.com/laravel/framework laravel
+
             - name: Run benchmark (timed)
               working-directory: nikic-PHP-Parser
               run: |
@@ -51,8 +54,8 @@ jobs:
                   extensions: ast
                   coverage: none
 
-            # populate ../nikic-PHP-Parser with PHP files to parse
-            - run: composer install --no-progress --working-dir=nikic-PHP-Parser
+            - name: Clone Laravel corpus
+              run: git clone --depth 1 https://github.com/laravel/framework laravel
 
             - name: Run benchmark (timed)
               working-directory: ext-ast
@@ -77,17 +80,12 @@ jobs:
         steps:
             - uses: actions/checkout@v4
 
-            - uses: shivammathur/setup-php@v2
-              with:
-                  php-version: 8.4
-                  coverage: none
-
             - uses: actions/setup-go@v5
               with:
                   go-version: stable
 
-            # populate ../nikic-PHP-Parser with PHP files to parse
-            - run: composer install --no-progress --working-dir=nikic-PHP-Parser
+            - name: Clone Laravel corpus
+              run: git clone --depth 1 https://github.com/laravel/framework laravel
 
             - run: go build -o z7zmey-php-parser-dev .
               working-directory: z7zmey-php-parser-dev
@@ -110,12 +108,68 @@ jobs:
                   name: duration-z7zmey-php-parser-dev
                   path: z7zmey-php-parser-dev.txt
 
+    halleck45-go-php-parser:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-go@v5
+              with:
+                  go-version: stable
+
+            - name: Install musl toolchain
+              run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+            - name: Clone Laravel corpus
+              run: git clone --depth 1 https://github.com/laravel/framework laravel
+
+            # The module ships no prebuilt native libs; fetch the musl build-time
+            # artifacts (libphp.a, libastbridge.a, PHP embed headers) into the
+            # local module copy referenced by the relative `replace` in go.mod.
+            - name: Prepare go-php-parser native libs
+              working-directory: halleck45-go-php-parser
+              run: |
+                  rm -rf .halleck-src
+                  git clone --depth 1 https://github.com/Halleck45/go-php-parser .halleck-src
+                  curl -sL -o musl.tgz https://github.com/Halleck45/go-php-parser/releases/download/v0.1.0/prebuilt-linux_amd64_musl.tar.gz
+                  tar xzf musl.tgz -C .halleck-src
+                  rm musl.tgz
+
+            - name: Build
+              working-directory: halleck45-go-php-parser
+              run: |
+                  INC="$(pwd)/.halleck-src/prebuilt/linux_amd64_musl/include/php"
+                  GOFLAGS=-mod=mod CC=musl-gcc CGO_ENABLED=1 \
+                    CGO_CFLAGS="-I$INC -I$INC/main -I$INC/Zend -I$INC/TSRM -I$INC/sapi/embed -I$INC/ext -I$INC/ext/date/lib" \
+                    go build -tags musl -o halleck45-go-php-parser .
+
+            - name: Run benchmark (timed)
+              working-directory: halleck45-go-php-parser
+              run: |
+                  # warm-up: fetch runtime libs into v1/prebuilt (cached for later runs)
+                  ./halleck45-go-php-parser ../laravel/src > /dev/null
+                  total=0
+                  for i in $(seq 1 10); do
+                    start=$(date +%s%3N)
+                    make run > /dev/null
+                    end=$(date +%s%3N)
+                    total=$((total + end - start))
+                    echo "run $i: $((end - start)) ms"
+                  done
+                  echo "halleck45/go-php-parser|$((total / 10))" > ../halleck45-go-php-parser.txt
+
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: duration-halleck45-go-php-parser
+                  path: halleck45-go-php-parser.txt
+
     summary:
         runs-on: ubuntu-latest
         needs:
             - nikic-php-parser
             - ext-ast
             - z7zmey-php-parser-dev
+            - halleck45-go-php-parser
         steps:
             - uses: actions/download-artifact@v4
               with:
@@ -128,7 +182,7 @@ jobs:
                   {
                     echo "## Benchmark results"
                     echo ""
-                    echo "Average wall-clock time over 10 runs parsing the nikic/php-parser \`vendor/\` corpus. Fastest first."
+                    echo "Average wall-clock time over 10 runs parsing the Laravel framework \`src/\` corpus. Fastest first."
                     echo ""
                     echo '```'
                     {

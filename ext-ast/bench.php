@@ -23,7 +23,7 @@ foreach ($recursiveIterator as $path) {
 
 function parse(SplFileInfo $path) {
     try {
-        $ast = ast\parse_file($path, $version=50);
+        $ast = ast\parse_file($path, $version=110);
     } catch (Error $error) {
         echo "Parse error: {$error->getMessage()}\n";
     }

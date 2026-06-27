@@ -2,7 +2,7 @@
     "name": "z7zmey/ext-ast-bench",
     "type": "project",
     "require": {
-        "ext-ast": "^0.1.6"
+        "ext-ast": "^1.1"
     },
     "license": "mit",
     "authors": [

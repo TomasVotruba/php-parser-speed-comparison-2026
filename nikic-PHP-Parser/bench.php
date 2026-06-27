@@ -28,7 +28,7 @@ foreach ($recursiveIterator as $path) {
 }
 
 function parse(SplFileInfo $path) {
-    $parser = (new ParserFactory)->create(ParserFactory::PREFER_PHP7);
+    $parser = (new ParserFactory)->createForNewestSupportedVersion();
     try {
         $ast = $parser->parse(file_get_contents($path));
     } catch (Error $error) {

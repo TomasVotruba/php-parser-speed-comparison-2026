@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -62,11 +61,10 @@ func parseFile(path string) {
 	content, err := ioutil.ReadFile(path)
 	checkErr(err)
 
-	r := bytes.NewReader(content)
-	p := php7.NewParser(r, path)
+	p := php7.NewParser(content, "7.4")
 	p.Parse()
 
-	fmt.Println("[" + strconv.Itoa(counter) + "] " + p.GetPath())
+	fmt.Println("[" + strconv.Itoa(counter) + "] " + path)
 }
 
 func checkErr(err error) {

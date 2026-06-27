@@ -2,8 +2,8 @@
     "name": "z7zmey/nikik-php-parser-bench",
     "type": "project",
     "require": {
-        "nikic/php-parser": "^4.0",
-        "mpdf/mpdf": "^7.1"
+        "nikic/php-parser": "^5.0",
+        "mpdf/mpdf": "^8.0"
     },
     "license": "mit",
     "authors": [

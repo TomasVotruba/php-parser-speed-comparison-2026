@@ -1,0 +1,86 @@
+name: Benchmark
+
+on:
+    pull_request: null
+    push:
+        branches:
+            - main
+
+jobs:
+    nikic-php-parser:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: shivammathur/setup-php@v2
+              with:
+                  php-version: 8.4
+                  coverage: none
+
+            - run: composer install --no-progress --working-dir=nikic-PHP-Parser
+
+            - run: make run
+              working-directory: nikic-PHP-Parser
+
+    ext-ast:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: shivammathur/setup-php@v2
+              with:
+                  php-version: 8.4
+                  extensions: ast
+                  coverage: none
+
+            # populate ../nikic-PHP-Parser with PHP files to parse
+            - run: composer install --no-progress --working-dir=nikic-PHP-Parser
+
+            - run: make run
+              working-directory: ext-ast
+
+    z7zmey-php-parser:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: shivammathur/setup-php@v2
+              with:
+                  php-version: 8.4
+                  coverage: none
+
+            - uses: actions/setup-go@v5
+              with:
+                  go-version: stable
+
+            # populate ../nikic-PHP-Parser with PHP files to parse
+            - run: composer install --no-progress --working-dir=nikic-PHP-Parser
+
+            - run: go build -o z7zmey-php-parser .
+              working-directory: z7zmey-php-parser
+
+            - run: make run
+              working-directory: z7zmey-php-parser
+
+    z7zmey-php-parser-dev:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: shivammathur/setup-php@v2
+              with:
+                  php-version: 8.4
+                  coverage: none
+
+            - uses: actions/setup-go@v5
+              with:
+                  go-version: stable
+
+            # populate ../nikic-PHP-Parser with PHP files to parse
+            - run: composer install --no-progress --working-dir=nikic-PHP-Parser
+
+            - run: go build -o z7zmey-php-parser-dev .
+              working-directory: z7zmey-php-parser-dev
+
+            - run: make run
+              working-directory: z7zmey-php-parser-dev

@@ -19,8 +19,18 @@ jobs:
 
             - run: composer install --no-progress --working-dir=nikic-PHP-Parser
 
-            - run: make run
+            - name: Run benchmark (timed)
               working-directory: nikic-PHP-Parser
+              run: |
+                  start=$(date +%s%3N)
+                  make run
+                  end=$(date +%s%3N)
+                  echo "nikic/php-parser (v5)|$((end - start))" > ../nikic-php-parser.txt
+
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: duration-nikic-php-parser
+                  path: nikic-php-parser.txt
 
     ext-ast:
         runs-on: ubuntu-latest
@@ -36,31 +46,18 @@ jobs:
             # populate ../nikic-PHP-Parser with PHP files to parse
             - run: composer install --no-progress --working-dir=nikic-PHP-Parser
 
-            - run: make run
+            - name: Run benchmark (timed)
               working-directory: ext-ast
+              run: |
+                  start=$(date +%s%3N)
+                  make run
+                  end=$(date +%s%3N)
+                  echo "ext-ast|$((end - start))" > ../ext-ast.txt
 
-    z7zmey-php-parser:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
-
-            - uses: shivammathur/setup-php@v2
+            - uses: actions/upload-artifact@v4
               with:
-                  php-version: 8.4
-                  coverage: none
-
-            - uses: actions/setup-go@v5
-              with:
-                  go-version: stable
-
-            # populate ../nikic-PHP-Parser with PHP files to parse
-            - run: composer install --no-progress --working-dir=nikic-PHP-Parser
-
-            - run: go build -o z7zmey-php-parser .
-              working-directory: z7zmey-php-parser
-
-            - run: make run
-              working-directory: z7zmey-php-parser
+                  name: duration-ext-ast
+                  path: ext-ast.txt
 
     z7zmey-php-parser-dev:
         runs-on: ubuntu-latest
@@ -82,5 +79,44 @@ jobs:
             - run: go build -o z7zmey-php-parser-dev .
               working-directory: z7zmey-php-parser-dev
 
-            - run: make run
+            - name: Run benchmark (timed)
               working-directory: z7zmey-php-parser-dev
+              run: |
+                  start=$(date +%s%3N)
+                  make run
+                  end=$(date +%s%3N)
+                  echo "z7zmey/php-parser|$((end - start))" > ../z7zmey-php-parser-dev.txt
+
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: duration-z7zmey-php-parser-dev
+                  path: z7zmey-php-parser-dev.txt
+
+    summary:
+        runs-on: ubuntu-latest
+        needs:
+            - nikic-php-parser
+            - ext-ast
+            - z7zmey-php-parser-dev
+        steps:
+            - uses: actions/download-artifact@v4
+              with:
+                  pattern: duration-*
+                  merge-multiple: true
+                  path: durations
+
+            - name: Render comparison table
+              run: |
+                  {
+                    echo "## Benchmark results"
+                    echo ""
+                    echo "Wall-clock time to parse the nikic/php-parser \`vendor/\` corpus. Fastest first."
+                    echo ""
+                    echo "| Rank | Parser | Duration |"
+                    echo "|---:|---|---:|"
+                    rank=0
+                    sort -t'|' -k2 -n durations/*.txt | while IFS='|' read -r name ms; do
+                      rank=$((rank + 1))
+                      printf '| %s | %s | %s ms |\n' "$rank" "$name" "$ms"
+                    done
+                  } >> "$GITHUB_STEP_SUMMARY"

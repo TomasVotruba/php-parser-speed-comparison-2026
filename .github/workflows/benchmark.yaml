@@ -25,10 +25,15 @@ jobs:
             - name: Run benchmark (timed)
               working-directory: nikic-PHP-Parser
               run: |
-                  start=$(date +%s%3N)
-                  make run
-                  end=$(date +%s%3N)
-                  echo "nikic/php-parser (v5)|$((end - start))" > ../nikic-php-parser.txt
+                  total=0
+                  for i in $(seq 1 10); do
+                    start=$(date +%s%3N)
+                    make run > /dev/null
+                    end=$(date +%s%3N)
+                    total=$((total + end - start))
+                    echo "run $i: $((end - start)) ms"
+                  done
+                  echo "nikic/php-parser (v5)|$((total / 10))" > ../nikic-php-parser.txt
 
             - uses: actions/upload-artifact@v4
               with:
@@ -52,10 +57,15 @@ jobs:
             - name: Run benchmark (timed)
               working-directory: ext-ast
               run: |
-                  start=$(date +%s%3N)
-                  make run
-                  end=$(date +%s%3N)
-                  echo "ext-ast|$((end - start))" > ../ext-ast.txt
+                  total=0
+                  for i in $(seq 1 10); do
+                    start=$(date +%s%3N)
+                    make run > /dev/null
+                    end=$(date +%s%3N)
+                    total=$((total + end - start))
+                    echo "run $i: $((end - start)) ms"
+                  done
+                  echo "ext-ast|$((total / 10))" > ../ext-ast.txt
 
             - uses: actions/upload-artifact@v4
               with:
@@ -85,10 +95,15 @@ jobs:
             - name: Run benchmark (timed)
               working-directory: z7zmey-php-parser-dev
               run: |
-                  start=$(date +%s%3N)
-                  make run
-                  end=$(date +%s%3N)
-                  echo "z7zmey/php-parser|$((end - start))" > ../z7zmey-php-parser-dev.txt
+                  total=0
+                  for i in $(seq 1 10); do
+                    start=$(date +%s%3N)
+                    make run > /dev/null
+                    end=$(date +%s%3N)
+                    total=$((total + end - start))
+                    echo "run $i: $((end - start)) ms"
+                  done
+                  echo "z7zmey/php-parser|$((total / 10))" > ../z7zmey-php-parser-dev.txt
 
             - uses: actions/upload-artifact@v4
               with:
@@ -113,13 +128,16 @@ jobs:
                   {
                     echo "## Benchmark results"
                     echo ""
-                    echo "Wall-clock time to parse the nikic/php-parser \`vendor/\` corpus. Fastest first."
+                    echo "Average wall-clock time over 10 runs parsing the nikic/php-parser \`vendor/\` corpus. Fastest first."
                     echo ""
-                    echo "| Rank | Parser | Duration |"
-                    echo "|---:|---|---:|"
-                    rank=0
-                    find durations -name '*.txt' -exec cat {} + | sort -t'|' -k2 -n | while IFS='|' read -r name ms; do
-                      rank=$((rank + 1))
-                      printf '| %s | %s | %s ms |\n' "$rank" "$name" "$ms"
-                    done
+                    echo '```'
+                    {
+                      printf 'Rank|Parser|Avg (10 runs)\n'
+                      rank=0
+                      find durations -name '*.txt' -exec cat {} + | sort -t'|' -k2 -n | while IFS='|' read -r name ms; do
+                        rank=$((rank + 1))
+                        printf '%s|%s|%s ms\n' "$rank" "$name" "$ms"
+                      done
+                    } | column -t -s'|' -o ' | ' -R 1,3
+                    echo '```'
                   } | tee -a "$GITHUB_STEP_SUMMARY"

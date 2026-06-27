@@ -2,7 +2,7 @@
 
 Speed comparison of PHP parsers, run automatically in CI.
 
-Each parser walks the same corpus — the `src/` directory of the [Laravel framework](https://github.com/laravel/framework) (cloned fresh in CI) — and parses every `.php` file. Each tool runs **5 times** and the **average** wall-clock time is reported.
+Each parser walks the same corpus — the `src/` directory of the [Laravel framework](https://github.com/laravel/framework) (cloned fresh in CI) — and parses every `.php` file. Each tool runs **10 times** and the **average** wall-clock time is reported.
 
 ## Parsers
 
@@ -16,11 +16,11 @@ Each parser walks the same corpus — the `src/` directory of the [Laravel frame
 ## Latest results
 
 ```
-Rank | Parser                  | Avg (5 runs)
-   1 | ext-ast                 |        215 ms
-   2 | halleck45/go-php-parser |        245 ms
-   3 | z7zmey/php-parser       |        267 ms
-   4 | nikic/php-parser (v5)   |       1804 ms
+Rank | Parser                  | Avg (10 runs) | vs slowest
+   1 | nikic/php-parser (v5)   |       1804 ms |       1.0x
+   2 | z7zmey/php-parser       |        267 ms |       6.8x
+   3 | halleck45/go-php-parser |        245 ms |       7.4x
+   4 | ext-ast                 |        215 ms |       8.4x
 ```
 
 > Timings come from shared GitHub-hosted runners — good for rough ranking, not precise benchmarking. Live numbers appear in every run's **Summary** page.

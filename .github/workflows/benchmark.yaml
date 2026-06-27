@@ -29,14 +29,14 @@ jobs:
               working-directory: nikic-PHP-Parser
               run: |
                   total=0
-                  for i in $(seq 1 5); do
+                  for i in $(seq 1 10); do
                     start=$(date +%s%3N)
                     make run > /dev/null
                     end=$(date +%s%3N)
                     total=$((total + end - start))
                     echo "run $i: $((end - start)) ms"
                   done
-                  echo "nikic/php-parser (v5)|$((total / 5))" > ../nikic-php-parser.txt
+                  echo "nikic/php-parser (v5)|$((total / 10))" > ../nikic-php-parser.txt
 
             - uses: actions/upload-artifact@v4
               with:
@@ -61,14 +61,14 @@ jobs:
               working-directory: ext-ast
               run: |
                   total=0
-                  for i in $(seq 1 5); do
+                  for i in $(seq 1 10); do
                     start=$(date +%s%3N)
                     make run > /dev/null
                     end=$(date +%s%3N)
                     total=$((total + end - start))
                     echo "run $i: $((end - start)) ms"
                   done
-                  echo "ext-ast|$((total / 5))" > ../ext-ast.txt
+                  echo "ext-ast|$((total / 10))" > ../ext-ast.txt
 
             - uses: actions/upload-artifact@v4
               with:
@@ -94,14 +94,14 @@ jobs:
               working-directory: z7zmey-php-parser-dev
               run: |
                   total=0
-                  for i in $(seq 1 5); do
+                  for i in $(seq 1 10); do
                     start=$(date +%s%3N)
                     make run > /dev/null
                     end=$(date +%s%3N)
                     total=$((total + end - start))
                     echo "run $i: $((end - start)) ms"
                   done
-                  echo "z7zmey/php-parser|$((total / 5))" > ../z7zmey-php-parser-dev.txt
+                  echo "z7zmey/php-parser|$((total / 10))" > ../z7zmey-php-parser-dev.txt
 
             - uses: actions/upload-artifact@v4
               with:
@@ -149,14 +149,14 @@ jobs:
                   # warm-up: fetch runtime libs into v1/prebuilt (cached for later runs)
                   ./halleck45-go-php-parser ../laravel/src > /dev/null
                   total=0
-                  for i in $(seq 1 5); do
+                  for i in $(seq 1 10); do
                     start=$(date +%s%3N)
                     make run > /dev/null
                     end=$(date +%s%3N)
                     total=$((total + end - start))
                     echo "run $i: $((end - start)) ms"
                   done
-                  echo "halleck45/go-php-parser|$((total / 5))" > ../halleck45-go-php-parser.txt
+                  echo "halleck45/go-php-parser|$((total / 10))" > ../halleck45-go-php-parser.txt
 
             - uses: actions/upload-artifact@v4
               with:
@@ -179,19 +179,22 @@ jobs:
 
             - name: Render comparison table
               run: |
+                  data=$(find durations -name '*.txt' -exec cat {} +)
+                  max=$(printf '%s\n' "$data" | sort -t'|' -k2 -nr | head -1 | cut -d'|' -f2)
                   {
                     echo "## Benchmark results"
                     echo ""
-                    echo "Average wall-clock time over 5 runs parsing the Laravel framework \`src/\` corpus. Fastest first."
+                    echo "Average wall-clock time over 10 runs parsing the Laravel framework \`src/\` corpus. Slowest first; \"vs slowest\" is how many times faster than the slowest parser."
                     echo ""
                     echo '```'
                     {
-                      printf 'Rank|Parser|Avg (5 runs)\n'
+                      printf 'Rank|Parser|Avg (10 runs)|vs slowest\n'
                       rank=0
-                      find durations -name '*.txt' -exec cat {} + | sort -t'|' -k2 -n | while IFS='|' read -r name ms; do
+                      printf '%s\n' "$data" | sort -t'|' -k2 -nr | while IFS='|' read -r name ms; do
                         rank=$((rank + 1))
-                        printf '%s|%s|%s ms\n' "$rank" "$name" "$ms"
+                        ratio=$(awk -v m="$max" -v x="$ms" 'BEGIN{printf "%.1fx", m/x}')
+                        printf '%s|%s|%s ms|%s\n' "$rank" "$name" "$ms" "$ratio"
                       done
-                    } | column -t -s'|' -o ' | ' -R 1,3
+                    } | column -t -s'|' -o ' | ' -R 1,3,4
                     echo '```'
                   } | tee -a "$GITHUB_STEP_SUMMARY"

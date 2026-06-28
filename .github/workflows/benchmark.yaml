@@ -33,20 +33,25 @@ jobs:
             - name: Run benchmark (timed)
               working-directory: nikic-PHP-Parser
               run: |
-                  total=0
-                  for i in $(seq 1 10); do
-                    start=$(date +%s%3N)
-                    make run > /dev/null
-                    end=$(date +%s%3N)
-                    total=$((total + end - start))
-                    echo "run $i: $((end - start)) ms"
-                  done
-                  echo "nikic/php-parser (v5)|$((total / 10))" > ../nikic-php-parser.txt
+                  bench() {
+                    total=0
+                    for i in $(seq 1 10); do
+                      start=$(date +%s%3N)
+                      "$@" > /dev/null
+                      end=$(date +%s%3N)
+                      total=$((total + end - start))
+                    done
+                    echo $((total / 10))
+                  }
+                  echo "nikic/php-parser (v5)|$(bench taskset -c 0 make run)" > ../single-nikic.txt
+                  echo "nikic/php-parser (v5)|$(bench make run)" > ../multi-nikic.txt
 
             - uses: actions/upload-artifact@v4
               with:
-                  name: duration-nikic-php-parser
-                  path: nikic-php-parser.txt
+                  name: duration-nikic
+                  path: |
+                      single-nikic.txt
+                      multi-nikic.txt
 
     ext-ast:
         runs-on: ubuntu-latest
@@ -70,20 +75,25 @@ jobs:
             - name: Run benchmark (timed)
               working-directory: ext-ast
               run: |
-                  total=0
-                  for i in $(seq 1 10); do
-                    start=$(date +%s%3N)
-                    make run > /dev/null
-                    end=$(date +%s%3N)
-                    total=$((total + end - start))
-                    echo "run $i: $((end - start)) ms"
-                  done
-                  echo "ext-ast|$((total / 10))" > ../ext-ast.txt
+                  bench() {
+                    total=0
+                    for i in $(seq 1 10); do
+                      start=$(date +%s%3N)
+                      "$@" > /dev/null
+                      end=$(date +%s%3N)
+                      total=$((total + end - start))
+                    done
+                    echo $((total / 10))
+                  }
+                  echo "ext-ast|$(bench taskset -c 0 make run)" > ../single-ext-ast.txt
+                  echo "ext-ast|$(bench make run)" > ../multi-ext-ast.txt
 
             - uses: actions/upload-artifact@v4
               with:
                   name: duration-ext-ast
-                  path: ext-ast.txt
+                  path: |
+                      single-ext-ast.txt
+                      multi-ext-ast.txt
 
     z7zmey-php-parser-dev:
         runs-on: ubuntu-latest
@@ -108,20 +118,25 @@ jobs:
             - name: Run benchmark (timed)
               working-directory: z7zmey-php-parser-dev
               run: |
-                  total=0
-                  for i in $(seq 1 10); do
-                    start=$(date +%s%3N)
-                    make run > /dev/null
-                    end=$(date +%s%3N)
-                    total=$((total + end - start))
-                    echo "run $i: $((end - start)) ms"
-                  done
-                  echo "z7zmey/php-parser|$((total / 10))" > ../z7zmey-php-parser-dev.txt
+                  bench() {
+                    total=0
+                    for i in $(seq 1 10); do
+                      start=$(date +%s%3N)
+                      "$@" > /dev/null
+                      end=$(date +%s%3N)
+                      total=$((total + end - start))
+                    done
+                    echo $((total / 10))
+                  }
+                  echo "z7zmey/php-parser|$(bench taskset -c 0 make run)" > ../single-z7zmey.txt
+                  echo "z7zmey/php-parser|$(bench make run)" > ../multi-z7zmey.txt
 
             - uses: actions/upload-artifact@v4
               with:
                   name: duration-z7zmey-php-parser-dev
-                  path: z7zmey-php-parser-dev.txt
+                  path: |
+                      single-z7zmey.txt
+                      multi-z7zmey.txt
 
     halleck45-go-php-parser:
         runs-on: ubuntu-latest
@@ -168,20 +183,25 @@ jobs:
               run: |
                   # warm-up: fetch runtime libs into v1/prebuilt (cached for later runs)
                   ./halleck45-go-php-parser ../laravel > /dev/null
-                  total=0
-                  for i in $(seq 1 10); do
-                    start=$(date +%s%3N)
-                    make run > /dev/null
-                    end=$(date +%s%3N)
-                    total=$((total + end - start))
-                    echo "run $i: $((end - start)) ms"
-                  done
-                  echo "halleck45/go-php-parser|$((total / 10))" > ../halleck45-go-php-parser.txt
+                  bench() {
+                    total=0
+                    for i in $(seq 1 10); do
+                      start=$(date +%s%3N)
+                      "$@" > /dev/null
+                      end=$(date +%s%3N)
+                      total=$((total + end - start))
+                    done
+                    echo $((total / 10))
+                  }
+                  echo "halleck45/go-php-parser|$(bench taskset -c 0 make run)" > ../single-halleck45.txt
+                  echo "halleck45/go-php-parser|$(bench make run)" > ../multi-halleck45.txt
 
             - uses: actions/upload-artifact@v4
               with:
                   name: duration-halleck45-go-php-parser
-                  path: halleck45-go-php-parser.txt
+                  path: |
+                      single-halleck45.txt
+                      multi-halleck45.txt
 
     mago-syntax:
         runs-on: ubuntu-latest
@@ -190,8 +210,13 @@ jobs:
 
             - uses: dtolnay/rust-toolchain@stable
 
-            - name: Clone Laravel corpus
-              run: git clone --depth 1 https://github.com/laravel/framework laravel
+            - name: Clone + install Laravel corpus
+              run: |
+                  git clone --depth 1 https://github.com/laravel/framework laravel
+                  composer install --no-interaction --no-progress --ignore-platform-reqs --working-dir=laravel
+                  # drop intentionally-broken PHP fixtures that crash some parsers
+                  rm -rf laravel/tests
+                  find laravel/vendor -depth -type d -name tests -exec rm -rf {} +
 
             - name: Build
               working-directory: mago-syntax
@@ -200,36 +225,30 @@ jobs:
             - name: Run benchmark (timed)
               working-directory: mago-syntax
               run: |
-                  ./target/release/mago-syntax-bench parallel ../laravel/src > /dev/null
-
-                  total=0
-                  for i in $(seq 1 10); do
-                    start=$(date +%s%3N)
-                    make run > /dev/null
-                    end=$(date +%s%3N)
-                    total=$((total + end - start))
-                    echo "parallel run $i: $((end - start)) ms"
-                  done
-                  echo "mago-syntax (parallel)|$((total / 10))" > ../mago-syntax-parallel.txt
-
-                  total=0
-                  for i in $(seq 1 10); do
-                    start=$(date +%s%3N)
-                    make run-single > /dev/null
-                    end=$(date +%s%3N)
-                    total=$((total + end - start))
-                    echo "single run $i: $((end - start)) ms"
-                  done
-                  echo "mago-syntax (single-threaded)|$((total / 10))" > ../mago-syntax-single.txt
+                  ./target/release/mago-syntax-bench parallel ../laravel > /dev/null
+                  bench() {
+                    total=0
+                    for i in $(seq 1 10); do
+                      start=$(date +%s%3N)
+                      "$@" > /dev/null
+                      end=$(date +%s%3N)
+                      total=$((total + end - start))
+                    done
+                    echo $((total / 10))
+                  }
+                  # single-core table: single-threaded mode pinned to one core
+                  echo "mago-syntax (single-threaded)|$(bench taskset -c 0 make run-single)" > ../single-mago.txt
+                  # all-core table: parallel mode (rayon across all cores)
+                  echo "mago-syntax (parallel)|$(bench make run)" > ../multi-mago.txt
 
             - uses: actions/upload-artifact@v4
               with:
                   name: duration-mago-syntax
                   path: |
-                      mago-syntax-parallel.txt
-                      mago-syntax-single.txt
+                      single-mago.txt
+                      multi-mago.txt
 
-    summary:
+    summary-single:
         runs-on: ubuntu-latest
         needs:
             - nikic-php-parser
@@ -244,14 +263,51 @@ jobs:
                   merge-multiple: true
                   path: durations
 
-            - name: Render comparison table
+            - name: Render single-core table
               run: |
-                  data=$(find durations -name '*.txt' -exec cat {} +)
+                  data=$(find durations -name 'single-*.txt' -exec cat {} +)
                   max=$(printf '%s\n' "$data" | sort -t'|' -k2 -nr | head -1 | cut -d'|' -f2)
                   {
-                    echo "## Benchmark results"
+                    echo "## Benchmark results — single core"
                     echo ""
-                    echo "Average wall-clock time over 10 runs parsing the full Laravel framework corpus (\`src/\` + all Composer \`vendor/\` dependencies). Slowest first; \"vs slowest\" is how many times faster than the slowest parser."
+                    echo "Average wall-clock time over 10 runs, each parser pinned to **one CPU core** (\`taskset -c 0\`), parsing the full Laravel framework corpus (\`src/\` + all Composer \`vendor/\` dependencies). Slowest first; \"vs slowest\" is how many times faster than the slowest parser."
+                    echo ""
+                    echo '```'
+                    {
+                      printf 'Rank|Parser|Avg (10 runs)|vs slowest\n'
+                      rank=0
+                      printf '%s\n' "$data" | sort -t'|' -k2 -nr | while IFS='|' read -r name ms; do
+                        rank=$((rank + 1))
+                        ratio=$(awk -v m="$max" -v x="$ms" 'BEGIN{printf "%.1fx", m/x}')
+                        printf '%s|%s|%s ms|%s\n' "$rank" "$name" "$ms" "$ratio"
+                      done
+                    } | column -t -s'|' -o ' | ' -R 1,3,4
+                    echo '```'
+                  } | tee -a "$GITHUB_STEP_SUMMARY"
+
+    summary-all-cores:
+        runs-on: ubuntu-latest
+        needs:
+            - nikic-php-parser
+            - ext-ast
+            - z7zmey-php-parser-dev
+            - halleck45-go-php-parser
+            - mago-syntax
+        steps:
+            - uses: actions/download-artifact@v4
+              with:
+                  pattern: duration-*
+                  merge-multiple: true
+                  path: durations
+
+            - name: Render all-core table
+              run: |
+                  data=$(find durations -name 'multi-*.txt' -exec cat {} +)
+                  max=$(printf '%s\n' "$data" | sort -t'|' -k2 -nr | head -1 | cut -d'|' -f2)
+                  {
+                    echo "## Benchmark results — all cores"
+                    echo ""
+                    echo "Average wall-clock time over 10 runs with **all runner cores available** (no pinning), parsing the full Laravel framework corpus (\`src/\` + all Composer \`vendor/\` dependencies). Only multi-threaded parsers (mago-syntax parallel) gain here; single-threaded parsers match their single-core number. Slowest first; \"vs slowest\" is how many times faster than the slowest parser."
                     echo ""
                     echo '```'
                     {

@@ -32,6 +32,9 @@ First get the corpus (once, at the repo root) — clone Laravel and install its 
 ```bash
 git clone --depth 1 https://github.com/laravel/framework laravel
 composer install --no-interaction --ignore-platform-reqs --working-dir=laravel
+# drop intentionally-broken PHP fixtures that crash some parsers
+rm -rf laravel/tests
+find laravel/vendor -depth -type d -name tests -exec rm -rf {} +
 ```
 
 Then run each subproject's `make run` target (wraps the parse in `time`):

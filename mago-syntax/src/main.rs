@@ -7,12 +7,17 @@ use mago_syntax::parser::parse_file_content;
 use rayon::prelude::*;
 use walkdir::WalkDir;
 
-const USAGE: &str = "usage: mago-syntax-bench <parallel|single> <dir>";
+const USAGE: &str = "usage: mago-syntax-bench <parallel|single|dump> <dir|file>";
 
 fn main() {
     let mut args = std::env::args().skip(1);
     let mode = args.next().expect(USAGE);
     let root = args.next().expect(USAGE);
+
+    if mode == "dump" {
+        dump_one(&root);
+        return;
+    }
 
     let files = collect_php_files(&root);
 
@@ -43,6 +48,13 @@ fn collect_php_files(root: &str) -> Vec<PathBuf> {
         .map(walkdir::DirEntry::into_path)
         .filter(|path| path.extension().is_some_and(|ext| ext == "php"))
         .collect()
+}
+
+fn dump_one(path: &str) {
+    let contents = std::fs::read(path).unwrap_or_default();
+    let arena = LocalArena::new();
+    let program = parse_file_content(&arena, FileId::zero(), &contents);
+    println!("{program:#?}");
 }
 
 fn parse_one(arena: &mut LocalArena, path: &Path) -> bool {

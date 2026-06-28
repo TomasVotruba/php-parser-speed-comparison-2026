@@ -12,13 +12,32 @@ import (
 	"github.com/karrick/godirwalk"
 	"github.com/yookoala/realpath"
 	"github.com/z7zmey/php-parser/php7"
+	"github.com/z7zmey/php-parser/visitor"
 )
 
 var counter int
 
 func main() {
+	dumpFile := flag.String("dump", "", "parse a single file and dump its AST, then exit")
 	flag.Parse()
+
+	if *dumpFile != "" {
+		dumpAST(*dumpFile)
+		return
+	}
+
 	processPath(flag.Args())
+}
+
+func dumpAST(path string) {
+	content, err := ioutil.ReadFile(path)
+	checkErr(err)
+
+	p := php7.NewParser(content, "7.4")
+	p.Parse()
+
+	dumper := &visitor.Dumper{Writer: os.Stdout, Indent: "  "}
+	p.GetRootNode().Walk(dumper)
 }
 
 func processPath(pathList []string) {

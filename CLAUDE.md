@@ -46,6 +46,7 @@ cgo wrapper that links an embedded static PHP. The Go module ships **no** prebui
 `.github/workflows/benchmark.yaml`: push to `main`, pull requests, cron every 12h.
 
 - One job per parser. Each runs `make run` **10 times**, averages the wall-clock ms, and uploads it as a `duration-*` artifact (`Label|ms` format).
+- One `dump-*` job per parser parses the single fixture `sample-class.php` (repo root) via `make dump` and prints the node tree to `$GITHUB_STEP_SUMMARY`. These need no corpus (no clone/prune) — just build the tool. Each `make dump` target calls the parser's dump entrypoint: nikic/ext-ast use `dump.php`; z7zmey/halleck45 take a `-dump <file>` flag; mago uses a `dump <file>` mode arg (prints `{program:#?}`).
 - The `summary` job downloads all artifacts, collects them with `find` (not a glob — files may be nested per artifact), sorts ascending, and renders a fixed-width table (`column -t`) into `$GITHUB_STEP_SUMMARY` (also `tee`'d to the job log).
 
 ## Editing the timing table

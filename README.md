@@ -55,10 +55,10 @@ Timings come from shared GitHub-hosted runners — good for rough ranking, not p
 
 **Core count matters.** The `ubuntu-latest` standard runner has only **4 vCPUs** (16 GB RAM). How each parser reacts to extra cores:
 
-- **`mago-syntax (parallel)`** — the only one that parses files across cores. Scales the most.
+- **`mago-syntax (parallel)`, `tree-sitter-php (parallel)`** — the two that actually parse files across cores. `tree-sitter-php` scales the most (**~2.3x**: 28546→12203 ms); `mago-syntax` scales **~1.9x** (1025→530 ms) and stays fastest in absolute terms.
 - **`nikic`, `ext-ast`** — single-threaded PHP. Single-core and all-core numbers match.
 - **`halleck45`, `z7zmey`** — parse sequentially, but the Go runtime (GC, scheduler, sysmon) uses extra cores anyway, so pinning to one core (`taskset -c 0`) slows them down. The speedup tracks `GOMAXPROCS`, not the workload — neither does any parallel parsing:
-    - `halleck45` gains the most (**~2x**: 5048→2641 ms) — Go + cgo around an embedded PHP, so more runtime/allocation work to offload.
-    - `z7zmey` is pure Go with less heap churn, so its gain is smaller (**~1.4x**: 5941→4355 ms).
+    - `halleck45` gains the most (**~1.9x**: 4481→2410 ms) — Go + cgo around an embedded PHP, so more runtime/allocation work to offload.
+    - `z7zmey` is pure Go with less heap churn, so its gain is smaller (**~1.3x**: 5666→4215 ms).
 
 Absolute numbers reflect a noisy-neighbour VM, not bare metal; only the *relative* ranking is meaningful, and even that can shift with runner contention.

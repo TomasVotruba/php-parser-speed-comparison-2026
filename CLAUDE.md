@@ -8,6 +8,7 @@ Benchmark repo comparing PHP parser speed. Each subproject parses the same corpu
 - `ext-ast/` — PHP, `php-ast` C extension. Composer requires `ext-ast` (platform), no real packages.
 - `z7zmey-php-parser-dev/` — Go, `z7zmey/php-parser` v0.7.2.
 - `halleck45-go-php-parser/` — Go + cgo wrapper around an embedded PHP, `halleck45/go-php-parser`.
+- `tree-sitter-php/` — Go binding for `tree-sitter-php` v0.24.2. Has `single` and `parallel` modes.
 
 The tagged `z7zmey-php-parser/` variant was removed — only the dev one is kept.
 

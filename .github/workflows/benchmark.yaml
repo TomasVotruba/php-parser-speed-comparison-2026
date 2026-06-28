@@ -409,7 +409,7 @@ jobs:
                   {
                     echo "## Benchmark results — all cores"
                     echo ""
-                    echo "Average wall-clock time over 5 runs with **all runner cores available** (no pinning), parsing the full Laravel framework corpus (\`src/\` + all Composer \`vendor/\` dependencies). Only multi-threaded parsers (mago-syntax parallel and tree-sitter-php parallel) gain here; single-threaded parsers match their single-core number. Slowest first; \"vs slowest\" is how many times faster than the slowest parser."
+                    echo "Average wall-clock time over 5 runs with **all runner cores available** (no pinning), parsing the full Laravel framework corpus (\`src/\` + all Composer \`vendor/\` dependencies). Only multi-threaded parsers (mago-syntax parallel, tree-sitter-php parallel, php-parser-in-go) gain here; single-threaded parsers match their single-core number. Slowest first; \"vs slowest\" is how many times faster than the slowest parser."
                     echo ""
                     echo '```'
                     {

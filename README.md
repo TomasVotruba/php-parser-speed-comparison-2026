@@ -26,12 +26,13 @@ Each run produces two tables — every parser pinned to a single core, vs all ru
 ### Single core (`taskset -c 0`)
 
 ```
-Rank | Parser                        | Avg (10 runs) | vs slowest
-   1 | nikic/php-parser (v5)         |      29854 ms |       1.0x
-   2 | z7zmey/php-parser             |       5941 ms |       5.0x
-   3 | halleck45/go-php-parser       |       5048 ms |       5.9x
-   4 | ext-ast                       |       2250 ms |      13.3x
-   5 | mago-syntax (single-threaded) |       1106 ms |      27.0x
+Rank | Parser                            | Avg (10 runs) | vs slowest
+   1 | nikic/php-parser (v5)             |      31407 ms |       1.0x
+   2 | tree-sitter-php (single-threaded) |      28546 ms |       1.1x
+   3 | z7zmey/php-parser                 |       5666 ms |       5.5x
+   4 | halleck45/go-php-parser           |       4481 ms |       7.0x
+   5 | ext-ast                           |       2230 ms |      14.1x
+   6 | mago-syntax (single-threaded)     |       1025 ms |      30.6x
 ```
 
 <br>
@@ -39,12 +40,13 @@ Rank | Parser                        | Avg (10 runs) | vs slowest
 ### All cores
 
 ```
-Rank | Parser                  | Avg (10 runs) | vs slowest
-   1 | nikic/php-parser (v5)   |      30092 ms |       1.0x
-   2 | z7zmey/php-parser       |       4355 ms |       6.9x
-   3 | halleck45/go-php-parser |       2641 ms |      11.4x
-   4 | ext-ast                 |       2222 ms |      13.5x
-   5 | mago-syntax (parallel)  |        516 ms |      58.3x
+Rank | Parser                     | Avg (10 runs) | vs slowest
+   1 | nikic/php-parser (v5)      |      30778 ms |       1.0x
+   2 | tree-sitter-php (parallel) |      12203 ms |       2.5x
+   3 | z7zmey/php-parser          |       4215 ms |       7.3x
+   4 | halleck45/go-php-parser    |       2410 ms |      12.8x
+   5 | ext-ast                    |       2215 ms |      13.9x
+   6 | mago-syntax (parallel)     |        530 ms |      58.1x
 ```
 
 <br>

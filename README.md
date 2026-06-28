@@ -1,8 +1,10 @@
 # php-parser-comparison
 
-Speed comparison of PHP parsers, run automatically in CI.
+Speed comparison of PHP parsers, run automatically in CI, every 12 hours.
 
 Each parser walks the same corpus — a freshly cloned [Laravel framework](https://github.com/laravel/framework) with **all Composer dependencies installed** (`src/` + `vendor/`) — and parses every `.php` file. Each tool runs **10 times** and the **average** wall-clock time is reported.
+
+<br>
 
 ## Parsers
 
@@ -14,7 +16,7 @@ Each parser walks the same corpus — a freshly cloned [Laravel framework](https
 | `halleck45-go-php-parser` | [halleck45/go-php-parser](https://github.com/Halleck45/go-php-parser) | Go + embedded PHP (cgo) |
 | `mago-syntax` | [mago-syntax](https://github.com/carthage-software/mago) v1.42 | Rust |
 
-`mago-syntax` runs in two modes: **parallel** (rayon across all cores, an arena per thread - how [Mago](https://github.com/carthage-software/mago) parses in production) and **single-threaded**. The parallel entry is the only multi-threaded parser here, so for a like-for-like comparison of raw parser speed look at **mago-syntax (single-threaded)**; the parallel number shows real-world throughput.
+<br>
 
 ## Latest results
 
@@ -31,6 +33,8 @@ Rank | Parser                        | Avg (10 runs) | vs slowest
    5 | mago-syntax (single-threaded) |       1106 ms |      27.0x
 ```
 
+<br>
+
 ### All cores
 
 ```
@@ -45,7 +49,3 @@ Rank | Parser                  | Avg (10 runs) | vs slowest
 > Timings come from shared GitHub-hosted runners — good for rough ranking, not precise benchmarking. Live numbers appear in every run's **Summary** page.
 >
 > **Core count matters.** The `ubuntu-latest` standard runner has only **4 vCPUs** (16 GB RAM). Every parser except `mago-syntax (parallel)` is single-threaded, so its single-core and all-core numbers match — only mago's parallel mode scales with cores. Absolute numbers reflect a noisy-neighbour VM, not bare metal; only the *relative* ranking is meaningful, and even that can shift with runner contention.
-
-## CI
-
-[`.github/workflows/benchmark.yaml`](.github/workflows/benchmark.yaml) runs on push to `main`, on pull requests, and every 12 hours via cron. One job per parser measures each parser twice (single-core and all-core); two summary jobs render the single-core and all-core comparison tables into the run summary.

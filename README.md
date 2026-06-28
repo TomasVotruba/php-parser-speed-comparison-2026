@@ -12,6 +12,9 @@ Each parser walks the same corpus — a freshly cloned [Laravel framework](https
 | `ext-ast` | [php-ast](https://github.com/nikic/php-ast) extension | PHP (C ext) |
 | `z7zmey-php-parser-dev` | [z7zmey/php-parser](https://github.com/z7zmey/php-parser) | Go |
 | `halleck45-go-php-parser` | [halleck45/go-php-parser](https://github.com/Halleck45/go-php-parser) | Go + embedded PHP (cgo) |
+| `mago-syntax` | [mago-syntax](https://github.com/carthage-software/mago) v1.42 | Rust |
+
+`mago-syntax` runs in two modes: **parallel** (rayon across all cores, an arena per thread - how [Mago](https://github.com/carthage-software/mago) parses in production) and **single-threaded**. The parallel entry is the only multi-threaded parser here, so for a like-for-like comparison of raw parser speed look at **mago-syntax (single-threaded)**; the parallel number shows real-world throughput.
 
 ## Latest results
 

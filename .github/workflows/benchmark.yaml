@@ -183,6 +183,52 @@ jobs:
                   name: duration-halleck45-go-php-parser
                   path: halleck45-go-php-parser.txt
 
+    mago-syntax:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: dtolnay/rust-toolchain@stable
+
+            - name: Clone Laravel corpus
+              run: git clone --depth 1 https://github.com/laravel/framework laravel
+
+            - name: Build
+              working-directory: mago-syntax
+              run: cargo build --release
+
+            - name: Run benchmark (timed)
+              working-directory: mago-syntax
+              run: |
+                  ./target/release/mago-syntax-bench parallel ../laravel/src > /dev/null
+
+                  total=0
+                  for i in $(seq 1 10); do
+                    start=$(date +%s%3N)
+                    make run > /dev/null
+                    end=$(date +%s%3N)
+                    total=$((total + end - start))
+                    echo "parallel run $i: $((end - start)) ms"
+                  done
+                  echo "mago-syntax (parallel)|$((total / 10))" > ../mago-syntax-parallel.txt
+
+                  total=0
+                  for i in $(seq 1 10); do
+                    start=$(date +%s%3N)
+                    make run-single > /dev/null
+                    end=$(date +%s%3N)
+                    total=$((total + end - start))
+                    echo "single run $i: $((end - start)) ms"
+                  done
+                  echo "mago-syntax (single-threaded)|$((total / 10))" > ../mago-syntax-single.txt
+
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: duration-mago-syntax
+                  path: |
+                      mago-syntax-parallel.txt
+                      mago-syntax-single.txt
+
     summary:
         runs-on: ubuntu-latest
         needs:
@@ -190,6 +236,7 @@ jobs:
             - ext-ast
             - z7zmey-php-parser-dev
             - halleck45-go-php-parser
+            - mago-syntax
         steps:
             - uses: actions/download-artifact@v4
               with:

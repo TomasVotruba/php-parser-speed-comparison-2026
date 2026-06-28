@@ -15,7 +15,6 @@ Each parser walks the same corpus — a freshly cloned [Laravel framework](https
 | `z7zmey-php-parser-dev` | [z7zmey/php-parser](https://github.com/z7zmey/php-parser) | Go |
 | `halleck45-go-php-parser` | [halleck45/go-php-parser](https://github.com/Halleck45/go-php-parser) | Go + embedded PHP (cgo) |
 | `mago-syntax` | [mago-syntax](https://github.com/carthage-software/mago) v1.42 | Rust |
-| `tree-sitter-php` | [tree-sitter-php](https://github.com/tree-sitter/tree-sitter-php) v0.24 | Go binding |
 
 <br>
 
@@ -26,13 +25,12 @@ Each run produces two tables — every parser pinned to a single core, vs all ru
 ### Single core (`taskset -c 0`)
 
 ```
-Rank | Parser                            | Avg (5 runs) | vs slowest
-   1 | nikic/php-parser (v5)             |     31407 ms |       1.0x
-   2 | tree-sitter-php (single-threaded) |     28546 ms |       1.1x
-   3 | z7zmey/php-parser                 |      5666 ms |       5.5x
-   4 | halleck45/go-php-parser           |      4481 ms |       7.0x
-   5 | ext-ast                           |      2230 ms |      14.1x
-   6 | mago-syntax (single-threaded)     |      1025 ms |      30.6x
+Rank | Parser                        | Avg (5 runs) | vs slowest
+   1 | nikic/php-parser (v5)         |     31407 ms |       1.0x
+   2 | z7zmey/php-parser             |      5666 ms |       5.5x
+   3 | halleck45/go-php-parser       |      4481 ms |       7.0x
+   4 | ext-ast                       |      2230 ms |      14.1x
+   5 | mago-syntax (single-threaded) |      1025 ms |      30.6x
 ```
 
 <br>
@@ -40,13 +38,12 @@ Rank | Parser                            | Avg (5 runs) | vs slowest
 ### All cores
 
 ```
-Rank | Parser                     | Avg (5 runs) | vs slowest
-   1 | nikic/php-parser (v5)      |     30778 ms |       1.0x
-   2 | tree-sitter-php (parallel) |     12203 ms |       2.5x
-   3 | z7zmey/php-parser          |      4215 ms |       7.3x
-   4 | halleck45/go-php-parser    |      2410 ms |      12.8x
-   5 | ext-ast                    |      2215 ms |      13.9x
-   6 | mago-syntax (parallel)     |       530 ms |      58.1x
+Rank | Parser                  | Avg (5 runs) | vs slowest
+   1 | nikic/php-parser (v5)   |     30778 ms |       1.0x
+   2 | z7zmey/php-parser       |      4215 ms |       7.3x
+   3 | halleck45/go-php-parser |      2410 ms |      12.8x
+   4 | ext-ast                 |      2215 ms |      13.9x
+   5 | mago-syntax (parallel)  |       530 ms |      58.1x
 ```
 
 <br>
@@ -55,7 +52,7 @@ Timings come from shared GitHub-hosted runners — good for rough ranking, not p
 
 **Core count matters.** The `ubuntu-latest` standard runner has only **4 vCPUs** (16 GB RAM). How each parser reacts to extra cores:
 
-- **`mago-syntax (parallel)`, `tree-sitter-php (parallel)`** — the two that actually parse files across cores. `tree-sitter-php` scales the most (**~2.3x**: 28546→12203 ms); `mago-syntax` scales **~1.9x** (1025→530 ms) and stays fastest in absolute terms.
+- **`mago-syntax (parallel)`** — the only one that actually parses files across cores. Scales **~1.9x** (1025→530 ms) and stays fastest in absolute terms.
 - **`nikic`, `ext-ast`** — single-threaded PHP. Single-core and all-core numbers match.
 - **`halleck45`, `z7zmey`** — parse sequentially, but the Go runtime (GC, scheduler, sysmon) uses extra cores anyway, so pinning to one core (`taskset -c 0`) slows them down. The speedup tracks `GOMAXPROCS`, not the workload — neither does any parallel parsing:
     - `halleck45` gains the most (**~1.9x**: 4481→2410 ms) — Go + cgo around an embedded PHP, so more runtime/allocation work to offload.

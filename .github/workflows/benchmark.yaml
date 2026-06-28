@@ -293,6 +293,59 @@ jobs:
                       single-tree-sitter-php.txt
                       multi-tree-sitter-php.txt
 
+    php-parser-in-go:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-go@v5
+              with:
+                  go-version: stable
+
+            - name: Clone + install Laravel corpus
+              run: |
+                  git clone --depth 1 https://github.com/laravel/framework laravel
+                  composer install --no-interaction --no-progress --ignore-platform-reqs --working-dir=laravel
+                  # drop intentionally-broken PHP fixtures that crash some parsers
+                  rm -rf laravel/tests
+                  find laravel/vendor -depth -type d -name tests -exec rm -rf {} +
+
+            # Private package: clone with a PAT into a gitignored local copy,
+            # then build its cmd/php-parser (generated parser files are committed,
+            # so no goyacc/ragel needed). The binary parses a dir tree concurrently
+            # across GOMAXPROCS workers, so taskset -c 0 yields the single-core run.
+            - name: Build
+              working-directory: php-parser-in-go
+              env:
+                  TOKEN: ${{ secrets.PHP_PARSER_IN_GO_TOKEN }}
+              run: |
+                  rm -rf .ppgo-src
+                  git clone --depth 1 "https://x-access-token:${TOKEN}@github.com/TomasVotruba/php-parser-in-go.git" .ppgo-src
+                  (cd .ppgo-src && go build -o ../php-parser-in-go ./cmd/php-parser)
+
+            - name: Run benchmark (timed)
+              working-directory: php-parser-in-go
+              run: |
+                  bench() {
+                    total=0
+                    for i in $(seq 1 5); do
+                      start=$(date +%s%3N)
+                      "$@" > /dev/null
+                      end=$(date +%s%3N)
+                      total=$((total + end - start))
+                    done
+                    echo $((total / 5))
+                  }
+                  echo "php-parser-in-go|$(bench taskset -c 0 make run)" > ../single-php-parser-in-go.txt
+                  echo "php-parser-in-go|$(bench make run)" > ../multi-php-parser-in-go.txt
+
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: duration-php-parser-in-go
+                  path: |
+                      single-php-parser-in-go.txt
+                      multi-php-parser-in-go.txt
+
     summary-single:
         runs-on: ubuntu-latest
         needs:
@@ -302,6 +355,7 @@ jobs:
             - halleck45-go-php-parser
             - mago-syntax
             - tree-sitter-php
+            - php-parser-in-go
         steps:
             - uses: actions/download-artifact@v4
               with:
@@ -320,7 +374,7 @@ jobs:
                     echo ""
                     echo '```'
                     {
-                      printf 'Rank|Parser|Avg (5 runs)|vs slowest\n'
+                      printf '#|Parser|Avg (5 runs)|vs slowest\n'
                       rank=0
                       printf '%s\n' "$data" | sort -t'|' -k2 -nr | while IFS='|' read -r name ms; do
                         rank=$((rank + 1))
@@ -340,6 +394,7 @@ jobs:
             - halleck45-go-php-parser
             - mago-syntax
             - tree-sitter-php
+            - php-parser-in-go
         steps:
             - uses: actions/download-artifact@v4
               with:
@@ -354,11 +409,11 @@ jobs:
                   {
                     echo "## Benchmark results — all cores"
                     echo ""
-                    echo "Average wall-clock time over 5 runs with **all runner cores available** (no pinning), parsing the full Laravel framework corpus (\`src/\` + all Composer \`vendor/\` dependencies). Only multi-threaded parsers (mago-syntax parallel and tree-sitter-php parallel) gain here; single-threaded parsers match their single-core number. Slowest first; \"vs slowest\" is how many times faster than the slowest parser."
+                    echo "Average wall-clock time over 5 runs with **all runner cores available** (no pinning), parsing the full Laravel framework corpus (\`src/\` + all Composer \`vendor/\` dependencies). Only multi-threaded parsers (mago-syntax parallel, tree-sitter-php parallel, php-parser-in-go) gain here; single-threaded parsers match their single-core number. Slowest first; \"vs slowest\" is how many times faster than the slowest parser."
                     echo ""
                     echo '```'
                     {
-                      printf 'Rank|Parser|Avg (5 runs)|vs slowest\n'
+                      printf '#|Parser|Avg (5 runs)|vs slowest\n'
                       rank=0
                       printf '%s\n' "$data" | sort -t'|' -k2 -nr | while IFS='|' read -r name ms; do
                         rank=$((rank + 1))

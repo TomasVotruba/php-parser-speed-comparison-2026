@@ -9,6 +9,7 @@ Benchmark repo comparing PHP parser speed. Each subproject parses the same corpu
 - `z7zmey-php-parser-dev/` — Go, `z7zmey/php-parser` v0.7.2.
 - `halleck45-go-php-parser/` — Go + cgo wrapper around an embedded PHP, `halleck45/go-php-parser`.
 - `tree-sitter-php/` — Go binding for `tree-sitter-php` v0.24.2. Has `single` and `parallel` modes.
+- `php-parser-in-go/` — Go, **private** `TomasVotruba/php-parser-in-go` (a modern `pkg/parser` fork of z7zmey, module path still `github.com/z7zmey/php-parser`). No committed sources here; CI clones the private repo into a gitignored `.ppgo-src` and builds its `cmd/php-parser`.
 
 The tagged `z7zmey-php-parser/` variant was removed — only the dev one is kept.
 
@@ -24,6 +25,7 @@ The tagged `z7zmey-php-parser/` variant was removed — only the dev one is kept
 - `ext-ast/bench.php` passes AST version `110` to `ast\parse_file()` — versions below 70 are invalid in php-ast 1.x.
 - `nikic/bench.php` uses `(new ParserFactory)->createForNewestSupportedVersion()` — the v4 `create(PREFER_PHP7)` API was removed in v5.
 - `z7zmey/php-parser` v0.7.2 changed the API — `php7.NewParser([]byte, version)` and `GetPath()` was removed (the bench prints the file path itself). Older `bytes.Reader`-based code will not compile.
+- `php-parser-in-go` is private — its CI job clones with a PAT in the `PHP_PARSER_IN_GO_TOKEN` repo secret (`https://x-access-token:$TOKEN@github.com/...`). The job is skipped/red without that secret. Its `cmd/php-parser` parses concurrently across `GOMAXPROCS` workers, so `taskset -c 0` gives the single-core number and the plain run gets a real all-core speedup.
 - Built Go binaries and `vendor/` are gitignored.
 
 ## halleck45-go-php-parser build (the tricky one)

@@ -16,6 +16,7 @@ Each parser walks the same corpus — a freshly cloned [Laravel framework](https
 | `halleck45-go-php-parser` | [halleck45/go-php-parser](https://github.com/Halleck45/go-php-parser) | Go + embedded PHP (cgo) |
 | `mago-syntax` | [mago-syntax](https://github.com/carthage-software/mago) v1.42 | Rust |
 | `tree-sitter-php` | [tree-sitter-php](https://github.com/tree-sitter/tree-sitter-php) v0.24 | Go binding |
+| `php-parser-in-go` | [TomasVotruba/php-parser-in-go](https://github.com/TomasVotruba/php-parser-in-go) (private) | Go |
 
 <br>
 

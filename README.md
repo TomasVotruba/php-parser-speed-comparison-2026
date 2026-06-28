@@ -46,6 +46,8 @@ Rank | Parser                  | Avg (10 runs) | vs slowest
    5 | mago-syntax (parallel)  |        516 ms |      58.3x
 ```
 
+<br>
+
 > Timings come from shared GitHub-hosted runners — good for rough ranking, not precise benchmarking. Live numbers appear in every run's **Summary** page.
 >
 > **Core count matters.** The `ubuntu-latest` standard runner has only **4 vCPUs** (16 GB RAM). Every parser except `mago-syntax (parallel)` is single-threaded, so its single-core and all-core numbers match — only mago's parallel mode scales with cores. Absolute numbers reflect a noisy-neighbour VM, not bare metal; only the *relative* ranking is meaningful, and even that can shift with runner contention.

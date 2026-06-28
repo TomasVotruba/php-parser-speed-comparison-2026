@@ -374,7 +374,7 @@ jobs:
                     echo ""
                     echo '```'
                     {
-                      printf 'Rank|Parser|Avg (5 runs)|vs slowest\n'
+                      printf '#|Parser|Avg (5 runs)|vs slowest\n'
                       rank=0
                       printf '%s\n' "$data" | sort -t'|' -k2 -nr | while IFS='|' read -r name ms; do
                         rank=$((rank + 1))
@@ -413,7 +413,7 @@ jobs:
                     echo ""
                     echo '```'
                     {
-                      printf 'Rank|Parser|Avg (5 runs)|vs slowest\n'
+                      printf '#|Parser|Avg (5 runs)|vs slowest\n'
                       rank=0
                       printf '%s\n' "$data" | sort -t'|' -k2 -nr | while IFS='|' read -r name ms; do
                         rank=$((rank + 1))

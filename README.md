@@ -27,7 +27,7 @@ Each run produces two tables — every parser pinned to a single core, vs all ru
 ### Single core (`taskset -c 0`)
 
 ```
-Rank | Parser                            | Avg (5 runs) | vs slowest
+   # | Parser                            | Avg (5 runs) | vs slowest
    1 | nikic/php-parser (v5)             |     29369 ms |       1.0x
    2 | tree-sitter-php (single-threaded) |     28660 ms |       1.0x
    3 | z7zmey/php-parser                 |      5917 ms |       5.0x
@@ -42,7 +42,7 @@ Rank | Parser                            | Avg (5 runs) | vs slowest
 ### All cores
 
 ```
-Rank | Parser                     | Avg (5 runs) | vs slowest
+   # | Parser                     | Avg (5 runs) | vs slowest
    1 | nikic/php-parser (v5)      |     29192 ms |       1.0x
    2 | tree-sitter-php (parallel) |     12349 ms |       2.4x
    3 | z7zmey/php-parser          |      4478 ms |       6.5x

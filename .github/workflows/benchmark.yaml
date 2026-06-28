@@ -35,13 +35,13 @@ jobs:
               run: |
                   bench() {
                     total=0
-                    for i in $(seq 1 10); do
+                    for i in $(seq 1 5); do
                       start=$(date +%s%3N)
                       "$@" > /dev/null
                       end=$(date +%s%3N)
                       total=$((total + end - start))
                     done
-                    echo $((total / 10))
+                    echo $((total / 5))
                   }
                   echo "nikic/php-parser (v5)|$(bench taskset -c 0 make run)" > ../single-nikic.txt
                   echo "nikic/php-parser (v5)|$(bench make run)" > ../multi-nikic.txt
@@ -77,13 +77,13 @@ jobs:
               run: |
                   bench() {
                     total=0
-                    for i in $(seq 1 10); do
+                    for i in $(seq 1 5); do
                       start=$(date +%s%3N)
                       "$@" > /dev/null
                       end=$(date +%s%3N)
                       total=$((total + end - start))
                     done
-                    echo $((total / 10))
+                    echo $((total / 5))
                   }
                   echo "ext-ast|$(bench taskset -c 0 make run)" > ../single-ext-ast.txt
                   echo "ext-ast|$(bench make run)" > ../multi-ext-ast.txt
@@ -120,13 +120,13 @@ jobs:
               run: |
                   bench() {
                     total=0
-                    for i in $(seq 1 10); do
+                    for i in $(seq 1 5); do
                       start=$(date +%s%3N)
                       "$@" > /dev/null
                       end=$(date +%s%3N)
                       total=$((total + end - start))
                     done
-                    echo $((total / 10))
+                    echo $((total / 5))
                   }
                   echo "z7zmey/php-parser|$(bench taskset -c 0 make run)" > ../single-z7zmey.txt
                   echo "z7zmey/php-parser|$(bench make run)" > ../multi-z7zmey.txt
@@ -185,13 +185,13 @@ jobs:
                   ./halleck45-go-php-parser ../laravel > /dev/null
                   bench() {
                     total=0
-                    for i in $(seq 1 10); do
+                    for i in $(seq 1 5); do
                       start=$(date +%s%3N)
                       "$@" > /dev/null
                       end=$(date +%s%3N)
                       total=$((total + end - start))
                     done
-                    echo $((total / 10))
+                    echo $((total / 5))
                   }
                   echo "halleck45/go-php-parser|$(bench taskset -c 0 make run)" > ../single-halleck45.txt
                   echo "halleck45/go-php-parser|$(bench make run)" > ../multi-halleck45.txt
@@ -228,13 +228,13 @@ jobs:
                   ./target/release/mago-syntax-bench parallel ../laravel > /dev/null
                   bench() {
                     total=0
-                    for i in $(seq 1 10); do
+                    for i in $(seq 1 5); do
                       start=$(date +%s%3N)
                       "$@" > /dev/null
                       end=$(date +%s%3N)
                       total=$((total + end - start))
                     done
-                    echo $((total / 10))
+                    echo $((total / 5))
                   }
                   # single-core table: single-threaded mode pinned to one core
                   echo "mago-syntax (single-threaded)|$(bench taskset -c 0 make run-single)" > ../single-mago.txt
@@ -275,13 +275,13 @@ jobs:
                   ./tree-sitter-php-bench parallel ../laravel > /dev/null
                   bench() {
                     total=0
-                    for i in $(seq 1 10); do
+                    for i in $(seq 1 5); do
                       start=$(date +%s%3N)
                       "$@" > /dev/null
                       end=$(date +%s%3N)
                       total=$((total + end - start))
                     done
-                    echo $((total / 10))
+                    echo $((total / 5))
                   }
                   echo "tree-sitter-php (single-threaded)|$(bench taskset -c 0 make run-single)" > ../single-tree-sitter-php.txt
                   echo "tree-sitter-php (parallel)|$(bench make run)" > ../multi-tree-sitter-php.txt
@@ -316,11 +316,11 @@ jobs:
                   {
                     echo "## Benchmark results — single core"
                     echo ""
-                    echo "Average wall-clock time over 10 runs, each parser pinned to **one CPU core** (\`taskset -c 0\`), parsing the full Laravel framework corpus (\`src/\` + all Composer \`vendor/\` dependencies). Slowest first; \"vs slowest\" is how many times faster than the slowest parser."
+                    echo "Average wall-clock time over 5 runs, each parser pinned to **one CPU core** (\`taskset -c 0\`), parsing the full Laravel framework corpus (\`src/\` + all Composer \`vendor/\` dependencies). Slowest first; \"vs slowest\" is how many times faster than the slowest parser."
                     echo ""
                     echo '```'
                     {
-                      printf 'Rank|Parser|Avg (10 runs)|vs slowest\n'
+                      printf 'Rank|Parser|Avg (5 runs)|vs slowest\n'
                       rank=0
                       printf '%s\n' "$data" | sort -t'|' -k2 -nr | while IFS='|' read -r name ms; do
                         rank=$((rank + 1))
@@ -354,11 +354,11 @@ jobs:
                   {
                     echo "## Benchmark results — all cores"
                     echo ""
-                    echo "Average wall-clock time over 10 runs with **all runner cores available** (no pinning), parsing the full Laravel framework corpus (\`src/\` + all Composer \`vendor/\` dependencies). Only multi-threaded parsers (mago-syntax parallel and tree-sitter-php parallel) gain here; single-threaded parsers match their single-core number. Slowest first; \"vs slowest\" is how many times faster than the slowest parser."
+                    echo "Average wall-clock time over 5 runs with **all runner cores available** (no pinning), parsing the full Laravel framework corpus (\`src/\` + all Composer \`vendor/\` dependencies). Only multi-threaded parsers (mago-syntax parallel and tree-sitter-php parallel) gain here; single-threaded parsers match their single-core number. Slowest first; \"vs slowest\" is how many times faster than the slowest parser."
                     echo ""
                     echo '```'
                     {
-                      printf 'Rank|Parser|Avg (10 runs)|vs slowest\n'
+                      printf 'Rank|Parser|Avg (5 runs)|vs slowest\n'
                       rank=0
                       printf '%s\n' "$data" | sort -t'|' -k2 -nr | while IFS='|' read -r name ms; do
                         rank=$((rank + 1))

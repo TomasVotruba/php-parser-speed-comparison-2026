@@ -30,7 +30,7 @@ jobs:
                   rm -rf laravel/tests
                   find laravel/vendor -depth -type d -name tests -exec rm -rf {} +
 
-            - name: Run benchmark (timed)
+            - name: Run benchmark (timed + memory)
               working-directory: nikic-PHP-Parser
               run: |
                   bench() {
@@ -43,8 +43,15 @@ jobs:
                     done
                     echo $((total / 5))
                   }
-                  echo "nikic/php-parser (v5)|$(bench taskset -c 0 make run)" > ../single-nikic.txt
-                  echo "nikic/php-parser (v5)|$(bench make run)" > ../multi-nikic.txt
+                  # peak resident set size (MB) of a single direct binary run;
+                  # wraps the parser directly, not `make`, so /usr/bin/time sees
+                  # the parser process (make would only report its own tiny RSS).
+                  mem() {
+                    /usr/bin/time -v "$@" 2>mem.log > /dev/null
+                    awk '/Maximum resident set size/{printf "%d", $NF/1024}' mem.log
+                  }
+                  echo "nikic/php-parser (v5)|$(bench taskset -c 0 make run)|$(mem taskset -c 0 php -d memory_limit=512M bench.php ../laravel)" > ../single-nikic.txt
+                  echo "nikic/php-parser (v5)|$(bench make run)|$(mem php -d memory_limit=512M bench.php ../laravel)" > ../multi-nikic.txt
 
             - uses: actions/upload-artifact@v4
               with:
@@ -72,7 +79,7 @@ jobs:
                   rm -rf laravel/tests
                   find laravel/vendor -depth -type d -name tests -exec rm -rf {} +
 
-            - name: Run benchmark (timed)
+            - name: Run benchmark (timed + memory)
               working-directory: ext-ast
               run: |
                   bench() {
@@ -85,8 +92,13 @@ jobs:
                     done
                     echo $((total / 5))
                   }
-                  echo "ext-ast|$(bench taskset -c 0 make run)" > ../single-ext-ast.txt
-                  echo "ext-ast|$(bench make run)" > ../multi-ext-ast.txt
+                  # peak resident set size (MB) of a single direct binary run
+                  mem() {
+                    /usr/bin/time -v "$@" 2>mem.log > /dev/null
+                    awk '/Maximum resident set size/{printf "%d", $NF/1024}' mem.log
+                  }
+                  echo "ext-ast|$(bench taskset -c 0 make run)|$(mem taskset -c 0 php -d memory_limit=512M bench.php ../laravel)" > ../single-ext-ast.txt
+                  echo "ext-ast|$(bench make run)|$(mem php -d memory_limit=512M bench.php ../laravel)" > ../multi-ext-ast.txt
 
             - uses: actions/upload-artifact@v4
               with:
@@ -115,7 +127,7 @@ jobs:
             - run: go build -o z7zmey-php-parser-dev .
               working-directory: z7zmey-php-parser-dev
 
-            - name: Run benchmark (timed)
+            - name: Run benchmark (timed + memory)
               working-directory: z7zmey-php-parser-dev
               run: |
                   bench() {
@@ -128,8 +140,13 @@ jobs:
                     done
                     echo $((total / 5))
                   }
-                  echo "z7zmey/php-parser|$(bench taskset -c 0 make run)" > ../single-z7zmey.txt
-                  echo "z7zmey/php-parser|$(bench make run)" > ../multi-z7zmey.txt
+                  # peak resident set size (MB) of a single direct binary run
+                  mem() {
+                    /usr/bin/time -v "$@" 2>mem.log > /dev/null
+                    awk '/Maximum resident set size/{printf "%d", $NF/1024}' mem.log
+                  }
+                  echo "z7zmey/php-parser|$(bench taskset -c 0 make run)|$(mem taskset -c 0 ./z7zmey-php-parser-dev ../laravel)" > ../single-z7zmey.txt
+                  echo "z7zmey/php-parser|$(bench make run)|$(mem ./z7zmey-php-parser-dev ../laravel)" > ../multi-z7zmey.txt
 
             - uses: actions/upload-artifact@v4
               with:
@@ -193,8 +210,13 @@ jobs:
                     done
                     echo $((total / 5))
                   }
-                  echo "halleck45/go-php-parser|$(bench taskset -c 0 make run)" > ../single-halleck45.txt
-                  echo "halleck45/go-php-parser|$(bench make run)" > ../multi-halleck45.txt
+                  # peak resident set size (MB) of a single direct binary run
+                  mem() {
+                    /usr/bin/time -v "$@" 2>mem.log > /dev/null
+                    awk '/Maximum resident set size/{printf "%d", $NF/1024}' mem.log
+                  }
+                  echo "halleck45/go-php-parser|$(bench taskset -c 0 make run)|$(mem taskset -c 0 ./halleck45-go-php-parser ../laravel)" > ../single-halleck45.txt
+                  echo "halleck45/go-php-parser|$(bench make run)|$(mem ./halleck45-go-php-parser ../laravel)" > ../multi-halleck45.txt
 
             - uses: actions/upload-artifact@v4
               with:
@@ -236,10 +258,15 @@ jobs:
                     done
                     echo $((total / 5))
                   }
+                  # peak resident set size (MB) of a single direct binary run
+                  mem() {
+                    /usr/bin/time -v "$@" 2>mem.log > /dev/null
+                    awk '/Maximum resident set size/{printf "%d", $NF/1024}' mem.log
+                  }
                   # single-core table: single-threaded mode pinned to one core
-                  echo "mago-syntax (single-threaded)|$(bench taskset -c 0 make run-single)" > ../single-mago.txt
+                  echo "mago-syntax (single-threaded)|$(bench taskset -c 0 make run-single)|$(mem taskset -c 0 ./target/release/mago-syntax-bench single ../laravel)" > ../single-mago.txt
                   # all-core table: parallel mode (rayon across all cores)
-                  echo "mago-syntax (parallel)|$(bench make run)" > ../multi-mago.txt
+                  echo "mago-syntax (parallel)|$(bench make run)|$(mem ./target/release/mago-syntax-bench parallel ../laravel)" > ../multi-mago.txt
 
             - uses: actions/upload-artifact@v4
               with:
@@ -400,18 +427,18 @@ jobs:
                   {
                     echo "## Benchmark results — single core"
                     echo ""
-                    echo "Average wall-clock time over 5 runs, each parser pinned to **one CPU core** (\`taskset -c 0\`), parsing the full Laravel framework corpus (\`src/\` + all Composer \`vendor/\` dependencies). Slowest first; \"vs slowest\" is how many times faster than the slowest parser."
+                    echo "Average wall-clock time over 5 runs, each parser pinned to **one CPU core** (\`taskset -c 0\`), parsing the full Laravel framework corpus (\`src/\` + all Composer \`vendor/\` dependencies). \"Peak mem\" is the peak resident set size of a single run. Slowest first; \"vs slowest\" is how many times faster than the slowest parser."
                     echo ""
                     echo '```'
                     {
-                      printf 'Rank|Parser|Avg (5 runs)|vs slowest\n'
+                      printf 'Rank|Parser|Avg (5 runs)|Peak mem|vs slowest\n'
                       rank=0
-                      printf '%s\n' "$data" | sort -t'|' -k2 -nr | while IFS='|' read -r name ms; do
+                      printf '%s\n' "$data" | sort -t'|' -k2 -nr | while IFS='|' read -r name ms mem; do
                         rank=$((rank + 1))
                         ratio=$(awk -v m="$max" -v x="$ms" 'BEGIN{printf "%.1fx", m/x}')
-                        printf '%s|%s|%s ms|%s\n' "$rank" "$name" "$ms" "$ratio"
+                        printf '%s|%s|%s ms|%s MB|%s\n' "$rank" "$name" "$ms" "$mem" "$ratio"
                       done
-                    } | column -t -s'|' -o ' | ' -R 1,3,4
+                    } | column -t -s'|' -o ' | ' -R 1,3,4,5
                     echo '```'
                   } | tee -a "$GITHUB_STEP_SUMMARY"
 
@@ -437,17 +464,17 @@ jobs:
                   {
                     echo "## Benchmark results — all cores"
                     echo ""
-                    echo "Average wall-clock time over 5 runs with **all runner cores available** (no pinning), parsing the full Laravel framework corpus (\`src/\` + all Composer \`vendor/\` dependencies). Only multi-threaded parsers (mago-syntax parallel) gain here; single-threaded parsers match their single-core number. Slowest first; \"vs slowest\" is how many times faster than the slowest parser."
+                    echo "Average wall-clock time over 5 runs with **all runner cores available** (no pinning), parsing the full Laravel framework corpus (\`src/\` + all Composer \`vendor/\` dependencies). \"Peak mem\" is the peak resident set size of a single run. Only multi-threaded parsers (mago-syntax parallel) gain here; single-threaded parsers match their single-core number. Slowest first; \"vs slowest\" is how many times faster than the slowest parser."
                     echo ""
                     echo '```'
                     {
-                      printf 'Rank|Parser|Avg (5 runs)|vs slowest\n'
+                      printf 'Rank|Parser|Avg (5 runs)|Peak mem|vs slowest\n'
                       rank=0
-                      printf '%s\n' "$data" | sort -t'|' -k2 -nr | while IFS='|' read -r name ms; do
+                      printf '%s\n' "$data" | sort -t'|' -k2 -nr | while IFS='|' read -r name ms mem; do
                         rank=$((rank + 1))
                         ratio=$(awk -v m="$max" -v x="$ms" 'BEGIN{printf "%.1fx", m/x}')
-                        printf '%s|%s|%s ms|%s\n' "$rank" "$name" "$ms" "$ratio"
+                        printf '%s|%s|%s ms|%s MB|%s\n' "$rank" "$name" "$ms" "$mem" "$ratio"
                       done
-                    } | column -t -s'|' -o ' | ' -R 1,3,4
+                    } | column -t -s'|' -o ' | ' -R 1,3,4,5
                     echo '```'
                   } | tee -a "$GITHUB_STEP_SUMMARY"

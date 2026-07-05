@@ -2,7 +2,7 @@
 
 Speed comparison of PHP parsers, run automatically in CI, every 12 hours.
 
-Each parser walks the same corpus — a freshly cloned [Laravel framework](https://github.com/laravel/framework) with **all Composer dependencies installed** (`src/` + `vendor/`) — and parses every `.php` file. Each tool runs **5 times** and the **average** wall-clock time is reported.
+Each parser walks the same corpus — a freshly cloned [Laravel framework](https://github.com/laravel/framework) with **all Composer dependencies installed** (`src/` + `vendor/`) — and parses every `.php` file. Each tool runs **5 times** and the **average** wall-clock time is reported, along with the **peak memory** (resident set size) of a single run.
 
 <br>
 
@@ -25,26 +25,30 @@ Each run produces two tables — every parser pinned to a single core, vs all ru
 ### Single core (`taskset -c 0`)
 
 ```
-Rank | Parser                        | Avg (5 runs) | vs slowest
-   1 | nikic/php-parser (v5)         |     31407 ms |       1.0x
-   2 | z7zmey/php-parser             |      5666 ms |       5.5x
-   3 | halleck45/go-php-parser       |      4481 ms |       7.0x
-   4 | ext-ast                       |      2230 ms |      14.1x
-   5 | mago-syntax (single-threaded) |      1025 ms |      30.6x
+Rank | Parser                        | Avg (5 runs) | Peak mem | vs slowest
+   1 | nikic/php-parser (v5)         |     31407 ms |     — MB |       1.0x
+   2 | z7zmey/php-parser             |      5666 ms |     — MB |       5.5x
+   3 | halleck45/go-php-parser       |      4481 ms |     — MB |       7.0x
+   4 | ext-ast                       |      2230 ms |     — MB |      14.1x
+   5 | mago-syntax (single-threaded) |      1025 ms |     — MB |      30.6x
 ```
+
+<sub>Memory column populates from the next CI run's Summary — copy the final numbers here.</sub>
 
 <br>
 
 ### All cores
 
 ```
-Rank | Parser                  | Avg (5 runs) | vs slowest
-   1 | nikic/php-parser (v5)   |     30778 ms |       1.0x
-   2 | z7zmey/php-parser       |      4215 ms |       7.3x
-   3 | halleck45/go-php-parser |      2410 ms |      12.8x
-   4 | ext-ast                 |      2215 ms |      13.9x
-   5 | mago-syntax (parallel)  |       530 ms |      58.1x
+Rank | Parser                  | Avg (5 runs) | Peak mem | vs slowest
+   1 | nikic/php-parser (v5)   |     30778 ms |     — MB |       1.0x
+   2 | z7zmey/php-parser       |      4215 ms |     — MB |       7.3x
+   3 | halleck45/go-php-parser |      2410 ms |     — MB |      12.8x
+   4 | ext-ast                 |      2215 ms |     — MB |      13.9x
+   5 | mago-syntax (parallel)  |       530 ms |     — MB |      58.1x
 ```
+
+<sub>Memory column populates from the next CI run's Summary — copy the final numbers here.</sub>
 
 <br>
 

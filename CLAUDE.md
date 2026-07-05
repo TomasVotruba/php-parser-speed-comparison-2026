@@ -45,10 +45,10 @@ cgo wrapper that links an embedded static PHP. The Go module ships **no** prebui
 
 `.github/workflows/benchmark.yaml`: push to `main`, pull requests, cron every 12h.
 
-- One job per parser. Each runs `make run` **10 times**, averages the wall-clock ms, and uploads it as a `duration-*` artifact (`Label|ms` format).
+- One job per parser. Each runs `make run` **10 times**, averages the wall-clock ms, measures peak RSS (via `/usr/bin/time -v` on a single direct binary run — wrapping the binary, not `make`), and uploads it as a `duration-*` artifact (`Label|ms|mem_mb` format).
 - One `dump-*` job per parser parses the single fixture `sample-class.php` (repo root) via `make dump` and prints the node tree to `$GITHUB_STEP_SUMMARY`. These need no corpus (no clone/prune) — just build the tool. Each `make dump` target calls the parser's dump entrypoint: nikic/ext-ast use `dump.php`; z7zmey/halleck45 take a `-dump <file>` flag; mago uses a `dump <file>` mode arg (prints `{program:#?}`).
 - The `summary` job downloads all artifacts, collects them with `find` (not a glob — files may be nested per artifact), sorts ascending, and renders a fixed-width table (`column -t`) into `$GITHUB_STEP_SUMMARY` (also `tee`'d to the job log).
 
 ## Editing the timing table
 
-Keep the artifact line format `Label|ms`. The summary sorts numerically on the second `|`-field, so the label must not contain `|`.
+Keep the artifact line format `Label|ms|mem_mb`. The summary sorts numerically on the second `|`-field (ms) and renders `mem_mb` as the "Peak mem" column, so the label must not contain `|`.

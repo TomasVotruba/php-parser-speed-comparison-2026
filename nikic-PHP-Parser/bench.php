@@ -6,6 +6,8 @@ use PhpParser\Error;
 use PhpParser\NodeDumper;
 use PhpParser\ParserFactory;
 
+gc_disable();
+
 $path = realpath(getcwd() . DIRECTORY_SEPARATOR . $argv[1]);
 
 $iterator = new RecursiveDirectoryIterator($path);

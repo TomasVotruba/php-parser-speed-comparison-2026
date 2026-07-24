@@ -1,6 +1,6 @@
 # php-parser-comparison
 
-Speed comparison of PHP parsers, run automatically in CI, every 12 hours.
+Speed comparison of PHP parsers, run automatically in CI every 12 hours.
 
 Each parser walks the same corpus — a freshly cloned [Laravel framework](https://github.com/laravel/framework) with **all Composer dependencies installed** (`src/` + `vendor/`) — and parses every `.php` file. Each tool runs **5 times** and the **average** wall-clock time is reported, along with the **peak memory** (resident set size) of a single run.
 

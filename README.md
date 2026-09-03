@@ -13,6 +13,7 @@ Each parser walks the same corpus — a freshly cloned [Laravel framework](https
 | `nikic-PHP-Parser` | [nikic/php-parser](https://github.com/nikic/PHP-Parser) v5 | PHP |
 | `ext-ast` | [php-ast](https://github.com/nikic/php-ast) extension | PHP (C ext) |
 | `z7zmey-php-parser-dev` | [z7zmey/php-parser](https://github.com/z7zmey/php-parser) | Go |
+| `rector-php-parser-in-go` | [rectorphp/php-parser-in-go](https://github.com/rectorphp/php-parser-in-go) | Go |
 | `halleck45-go-php-parser` | [halleck45/go-php-parser](https://github.com/Halleck45/go-php-parser) | Go + embedded PHP (cgo) |
 | `mago-syntax` | [mago-syntax](https://github.com/carthage-software/mago) v1.42 | Rust |
 

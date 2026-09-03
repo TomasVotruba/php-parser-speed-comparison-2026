@@ -155,6 +155,54 @@ jobs:
                       single-z7zmey.txt
                       multi-z7zmey.txt
 
+    rector-php-parser-in-go:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-go@v5
+              with:
+                  go-version: stable
+
+            - name: Clone + install Laravel corpus
+              run: |
+                  git clone --depth 1 https://github.com/laravel/framework laravel
+                  composer install --no-interaction --no-progress --ignore-platform-reqs --working-dir=laravel
+                  # drop intentionally-broken PHP fixtures that crash some parsers
+                  rm -rf laravel/tests
+                  find laravel/vendor -depth -type d -name tests -exec rm -rf {} +
+
+            - run: go build -o rector-php-parser-in-go .
+              working-directory: rector-php-parser-in-go
+
+            - name: Run benchmark (timed + memory)
+              working-directory: rector-php-parser-in-go
+              run: |
+                  bench() {
+                    total=0
+                    for i in $(seq 1 5); do
+                      start=$(date +%s%3N)
+                      "$@" > /dev/null
+                      end=$(date +%s%3N)
+                      total=$((total + end - start))
+                    done
+                    echo $((total / 5))
+                  }
+                  # peak resident set size (MB) of a single direct binary run
+                  mem() {
+                    /usr/bin/time -v "$@" 2>mem.log > /dev/null
+                    awk '/Maximum resident set size/{printf "%d", $NF/1024}' mem.log
+                  }
+                  echo "rectorphp/php-parser-in-go|$(bench taskset -c 0 make run)|$(mem taskset -c 0 ./rector-php-parser-in-go ../laravel)" > ../single-rector.txt
+                  echo "rectorphp/php-parser-in-go|$(bench make run)|$(mem ./rector-php-parser-in-go ../laravel)" > ../multi-rector.txt
+
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: duration-rector-php-parser-in-go
+                  path: |
+                      single-rector.txt
+                      multi-rector.txt
+
     halleck45-go-php-parser:
         runs-on: ubuntu-latest
         steps:
@@ -343,6 +391,29 @@ jobs:
                     echo '```'
                   } | tee -a "$GITHUB_STEP_SUMMARY"
 
+    dump-rector:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-go@v5
+              with:
+                  go-version: stable
+
+            - run: go build -o rector-php-parser-in-go .
+              working-directory: rector-php-parser-in-go
+
+            - name: Dump sample class AST
+              working-directory: rector-php-parser-in-go
+              run: |
+                  {
+                    echo "## rectorphp/php-parser-in-go — sample class AST"
+                    echo ""
+                    echo '```'
+                    make dump
+                    echo '```'
+                  } | tee -a "$GITHUB_STEP_SUMMARY"
+
     dump-halleck45:
         runs-on: ubuntu-latest
         steps:
@@ -411,6 +482,7 @@ jobs:
             - nikic-php-parser
             - ext-ast
             - z7zmey-php-parser-dev
+            - rector-php-parser-in-go
             - halleck45-go-php-parser
             - mago-syntax
         steps:
@@ -448,6 +520,7 @@ jobs:
             - nikic-php-parser
             - ext-ast
             - z7zmey-php-parser-dev
+            - rector-php-parser-in-go
             - halleck45-go-php-parser
             - mago-syntax
         steps:

@@ -7,6 +7,7 @@ Benchmark repo comparing PHP parser speed. Each subproject parses the same corpu
 - `nikic-PHP-Parser/` — PHP, `nikic/php-parser` v5. Composer project. Also pulls `mpdf/mpdf` (legacy; not used by the bench).
 - `ext-ast/` — PHP, `php-ast` C extension. Composer requires `ext-ast` (platform), no real packages.
 - `z7zmey-php-parser-dev/` — Go, `z7zmey/php-parser` v0.7.2.
+- `rector-php-parser-in-go/` — Go, `rectorphp/php-parser-in-go` v0.1.0 (z7zmey lineage re-extracted; new API `parser.Parse([]byte, conf.Config{Version})` + `dumper.NewDumper(w).Dump(node)`).
 - `halleck45-go-php-parser/` — Go + cgo wrapper around an embedded PHP, `halleck45/go-php-parser`.
 
 The tagged `z7zmey-php-parser/` variant was removed — only the dev one is kept.

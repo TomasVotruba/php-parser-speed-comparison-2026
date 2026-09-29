@@ -12,6 +12,15 @@ on:
 jobs:
     nikic-php-parser:
         runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                include:
+                    - version: 5.9.0
+                      label: v5.9
+                    - version: 5.8.0
+                      label: v5.8
+                    - version: 5.7.0
+                      label: v5.7
         steps:
             - uses: actions/checkout@v4
 
@@ -21,7 +30,8 @@ jobs:
                   coverage: none
                   ini-values: zend.assertions=-1
 
-            - run: composer install --no-progress --working-dir=nikic-PHP-Parser
+            # pin the exact php-parser version for this matrix leg
+            - run: composer require nikic/php-parser:=${{ matrix.version }} --no-progress --no-interaction --working-dir=nikic-PHP-Parser
 
             - name: Clone + install Laravel corpus
               run: |
@@ -51,15 +61,15 @@ jobs:
                     /usr/bin/time -v "$@" 2>mem.log > /dev/null
                     awk '/Maximum resident set size/{printf "%d", $NF/1024}' mem.log
                   }
-                  echo "nikic/php-parser (v5)|$(bench taskset -c 0 make run)|$(mem taskset -c 0 php -d memory_limit=512M bench.php ../laravel)" > ../single-nikic.txt
-                  echo "nikic/php-parser (v5)|$(bench make run)|$(mem php -d memory_limit=512M bench.php ../laravel)" > ../multi-nikic.txt
+                  echo "nikic/php-parser (${{ matrix.label }})|$(bench taskset -c 0 make run)|$(mem taskset -c 0 php -d memory_limit=512M bench.php ../laravel)" > ../single-nikic-${{ matrix.version }}.txt
+                  echo "nikic/php-parser (${{ matrix.label }})|$(bench make run)|$(mem php -d memory_limit=512M bench.php ../laravel)" > ../multi-nikic-${{ matrix.version }}.txt
 
             - uses: actions/upload-artifact@v4
               with:
-                  name: duration-nikic
+                  name: duration-nikic-${{ matrix.version }}
                   path: |
-                      single-nikic.txt
-                      multi-nikic.txt
+                      single-nikic-${{ matrix.version }}.txt
+                      multi-nikic-${{ matrix.version }}.txt
 
     ext-ast:
         runs-on: ubuntu-latest

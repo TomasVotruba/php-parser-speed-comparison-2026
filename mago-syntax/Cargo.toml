@@ -9,9 +9,9 @@ name = "mago-syntax-bench"
 path = "src/main.rs"
 
 [dependencies]
-mago-syntax = "=1.42.0"
-mago-allocator = "=1.42.0"
-mago-database = "=1.42.0"
+mago-syntax = "=1.50.0"
+mago-allocator = "=1.50.0"
+mago-database = "=1.50.0"
 rayon = "1"
 walkdir = "2"
 

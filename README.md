@@ -27,12 +27,12 @@ Each run produces two tables — every parser pinned to a single core, vs all ru
 
 ```
 Rank | Parser                        | Avg (5 runs) | Peak mem | vs slowest
-   1 | nikic/php-parser (v5)         |    31121 ms |  211 MB |       1.0x
-   2 | z7zmey/php-parser             |     6266 ms |   41 MB |       5.0x
-   3 | rectorphp/php-parser-in-go    |     5900 ms |   95 MB |       5.3x
-   4 | halleck45/go-php-parser       |     2450 ms |   75 MB |      12.7x
-   5 | ext-ast                       |     1620 ms |   99 MB |      19.2x
-   6 | mago-syntax (single-threaded) |     1201 ms |   73 MB |      25.9x
+   1 | nikic/php-parser (v5)         |     17973 ms |   206 MB |       1.0x
+   2 | rectorphp/php-parser-in-go    |      5978 ms |   108 MB |       3.0x
+   3 | z7zmey/php-parser             |      4769 ms |    39 MB |       3.8x
+   4 | halleck45/go-php-parser       |      4047 ms |    76 MB |       4.4x
+   5 | ext-ast                       |      2551 ms |    99 MB |       7.0x
+   6 | mago-syntax (single-threaded) |      1189 ms |    70 MB |      15.1x
 ```
 
 <br>
@@ -40,13 +40,13 @@ Rank | Parser                        | Avg (5 runs) | Peak mem | vs slowest
 ### All cores
 
 ```
-Rank | Parser                        | Avg (5 runs) | Peak mem | vs slowest
-   1 | nikic/php-parser (v5)         |    30574 ms |  211 MB |       1.0x
-   2 | z7zmey/php-parser             |     4726 ms |   39 MB |       6.5x
-   3 | rectorphp/php-parser-in-go    |     4718 ms |   73 MB |       6.5x
-   4 | halleck45/go-php-parser       |     1700 ms |   65 MB |      18.0x
-   5 | ext-ast                       |     1645 ms |   99 MB |      18.6x
-   6 | mago-syntax (parallel)        |      561 ms |  159 MB |      54.5x
+Rank | Parser                     | Avg (5 runs) | Peak mem | vs slowest
+   1 | nikic/php-parser (v5)      |     18123 ms |   207 MB |       1.0x
+   2 | rectorphp/php-parser-in-go |      4829 ms |    78 MB |       3.8x
+   3 | z7zmey/php-parser          |      3446 ms |    49 MB |       5.3x
+   4 | ext-ast                    |      2524 ms |    99 MB |       7.2x
+   5 | halleck45/go-php-parser    |      2070 ms |    65 MB |       8.8x
+   6 | mago-syntax (parallel)     |       570 ms |   131 MB |      31.8x
 ```
 
 <br>
@@ -61,13 +61,13 @@ Timings come from shared GitHub-hosted runners — good for rough ranking, not p
 
 **Core count matters.** The `ubuntu-latest` standard runner has only **4 vCPUs** (16 GB RAM). How each parser reacts to extra cores:
 
-- **`mago-syntax (parallel)`** — the only one that actually parses files across cores. Scales **~2.1x** (1201→561 ms) and stays fastest in absolute terms.
+- **`mago-syntax (parallel)`** — the only one that actually parses files across cores. Scales **~2.1x** (1189→570 ms) and stays fastest in absolute terms.
 - **`nikic`, `ext-ast`** — single-threaded PHP. Single-core and all-core numbers match.
 - **`halleck45`, `z7zmey`, `rectorphp/php-parser-in-go`** — parse sequentially, but the Go runtime (GC, scheduler, sysmon) uses extra cores anyway, so pinning to one core (`taskset -c 0`) slows them down. The speedup tracks `GOMAXPROCS`, not the workload — neither does any parallel parsing:
-    - `halleck45` gains the most (**~1.4x**: 2450→1700 ms) — Go + cgo around an embedded PHP, so more runtime/allocation work to offload.
-    - `z7zmey` is pure Go with less heap churn, so its gain is smaller (**~1.3x**: 6266→4726 ms).
-    - `rectorphp/php-parser-in-go` shares the z7zmey lineage and behaves similarly (**~1.25x**: 5900→4718 ms).
+    - `halleck45` gains the most (**~2.0x**: 4047→2070 ms) — Go + cgo around an embedded PHP, so more runtime/allocation work to offload.
+    - `z7zmey` is pure Go with less heap churn, so its gain is smaller (**~1.4x**: 4769→3446 ms).
+    - `rectorphp/php-parser-in-go` shares the z7zmey lineage and behaves similarly (**~1.25x**: 5978→4829 ms).
 
-**Memory.** The Go parsers are the leanest (`z7zmey` 39–41 MB, `halleck45` 65–75 MB, `rectorphp/php-parser-in-go` 73–95 MB); the PHP tools carry the interpreter's footprint (`nikic` ~211 MB, `ext-ast` ~99 MB). `mago-syntax` is tiny single-threaded (73 MB) but jumps to 159 MB in parallel mode — rayon buffering file contents across worker threads is the memory price of its speed.
+**Memory.** The Go parsers are the leanest (`z7zmey` 39–49 MB, `halleck45` 65–76 MB, `rectorphp/php-parser-in-go` 78–108 MB); the PHP tools carry the interpreter's footprint (`nikic` ~207 MB, `ext-ast` ~99 MB). `mago-syntax` is tiny single-threaded (70 MB) but jumps to 131 MB in parallel mode — rayon buffering file contents across worker threads is the memory price of its speed.
 
 Absolute numbers reflect a noisy-neighbour VM, not bare metal; only the *relative* ranking is meaningful, and even that can shift with runner contention.
